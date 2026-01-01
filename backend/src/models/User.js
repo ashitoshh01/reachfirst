@@ -16,7 +16,7 @@ const User = {
     },
 
     async findById(id) {
-        const [rows] = await db.execute('SELECT id, email, name, role, is_cr, avatar_url, is_online, last_seen, created_at FROM users WHERE id = ?', [id]);
+        const [rows] = await db.execute('SELECT id, email, name, role, is_cr, avatar_url, bio, is_online, last_seen, created_at FROM users WHERE id = ?', [id]);
         return rows[0];
     },
 
@@ -37,9 +37,13 @@ const User = {
         );
     },
 
+    async deleteById(id) {
+        await db.execute('DELETE FROM users WHERE id = ?', [id]);
+    },
+
     async findByRole(role) {
         const [rows] = await db.execute(
-            'SELECT id, email, name, role, is_cr, avatar_url, is_online, last_seen FROM users WHERE role = ?',
+            'SELECT id, email, name, role, is_cr, avatar_url, bio, is_online, last_seen FROM users WHERE role = ?',
             [role]
         );
         return rows;

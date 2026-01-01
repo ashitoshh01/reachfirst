@@ -99,6 +99,17 @@ const chatController = {
             console.error('MarkAsRead error:', error);
             res.status(500).json({ error: 'Server error' });
         }
+    },
+
+    async getChatMedia(req, res) {
+        try {
+            const { chatId } = req.params;
+            const media = await Message.getChatMedia(chatId);
+            res.json({ media });
+        } catch (error) {
+            console.error('GetChatMedia error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
     }
 };
 

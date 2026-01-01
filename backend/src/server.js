@@ -12,6 +12,9 @@ const chatRoutes = require('./routes/chats');
 const groupRoutes = require('./routes/groups');
 const classRoutes = require('./routes/classes');
 const automationRoutes = require('./routes/automation');
+const userRoutes = require('./routes/users');
+const uploadRoutes = require('./routes/upload');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +31,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -35,6 +39,8 @@ app.use('/api/chats', chatRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/automation', automationRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
