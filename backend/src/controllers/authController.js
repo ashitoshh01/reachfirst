@@ -5,15 +5,21 @@ const User = require('../models/User');
 const authController = {
     async register(req, res) {
         try {
-            const { email, password, name, role } = req.body;
+            const { email, password, name, code } = req.body;
 
-            // Validate input
-            if (!email || !password || !name || !role) {
-                return res.status(400).json({ error: 'All fields are required' });
+            let role = 'student'; // Default fallback or strictly enforce
+
+            if (code === 'despustudents') {
+                role = 'student';
+            } else if (code === 'desputeachers') {
+                role = 'teacher';
+            } else {
+                return res.status(400).json({ error: 'Invalid invitation code' });
             }
 
-            if (!['student', 'teacher', 'admin'].includes(role)) {
-                return res.status(400).json({ error: 'Invalid role' });
+            // Validate input
+            if (!email || !password || !name) {
+                return res.status(400).json({ error: 'All fields are required' });
             }
 
             // Check if user already exists

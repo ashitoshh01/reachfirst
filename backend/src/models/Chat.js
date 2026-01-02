@@ -5,27 +5,39 @@ const Chat = {
         // Ensure user1_id is always the smaller id for consistency
         const [smallerId, largerId] = user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
 
-        // Check if chat already exists
-        const [existing] = await db.execute(
-            'SELECT * FROM chats WHERE user1_id = ? AND user2_id = ?',
-            [smallerId, largerId]
-        );
+        try {
+            // Check if chat already exists
+            const [existing] = await db.execute(
+                'SELECT * FROM chats WHERE user1_id = ? AND user2_id = ?',
+                [smallerId, largerId]
+            );
 
-        if (existing.length > 0) {
-            return existing[0];
+            if (existing.length > 0) {
+                return existing[0];
+            }
+
+            // Create new chat
+            const [result] = await db.execute(
+                'INSERT INTO chats (user1_id, user2_id) VALUES (?, ?)',
+                [smallerId, largerId]
+            );
+
+            return {
+                id: result.insertId,
+                user1_id: smallerId,
+                user2_id: largerId
+            };
+        } catch (error) {
+            // Handle race condition where chat was created between check and insert
+            if (error.code === 'ER_DUP_ENTRY') {
+                const [existing] = await db.execute(
+                    'SELECT * FROM chats WHERE user1_id = ? AND user2_id = ?',
+                    [smallerId, largerId]
+                );
+                return existing[0];
+            }
+            throw error;
         }
-
-        // Create new chat
-        const [result] = await db.execute(
-            'INSERT INTO chats (user1_id, user2_id) VALUES (?, ?)',
-            [smallerId, largerId]
-        );
-
-        return {
-            id: result.insertId,
-            user1_id: smallerId,
-            user2_id: largerId
-        };
     },
 
     async getUserChats(userId) {

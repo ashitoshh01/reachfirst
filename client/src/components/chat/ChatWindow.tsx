@@ -321,12 +321,14 @@ export default function ChatWindow({
                         </svg>
                     </label>
                     <input
+                        ref={(input) => input && input.focus()}
+                        autoFocus
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
                         className="input input-dark flex-1"
-                        disabled={sending}
+
                     />
                     <button
                         type="submit"

@@ -18,7 +18,7 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string, name: string, role: string) => Promise<void>;
+    register: (email: string, password: string, name: string, code: string) => Promise<void>;
     logout: () => Promise<void>;
     updateProfile: (data: Partial<User>) => Promise<void>;
 }
@@ -57,17 +57,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         setUser(user);
-        router.push('/chat');
+        setUser(user);
+        // router.push('/chat'); // Let component handle redirect
     };
 
-    const register = async (email: string, password: string, name: string, role: string) => {
-        const response = await api.post('/api/auth/register', { email, password, name, role });
+    const register = async (email: string, password: string, name: string, code: string) => {
+        const response = await api.post('/api/auth/register', { email, password, name, code });
         const { token, user } = response.data;
 
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         setUser(user);
-        router.push('/chat');
+        setUser(user);
+        // router.push('/chat'); // Let component handle redirect
     };
 
     const updateProfile = async (data: Partial<User>) => {
