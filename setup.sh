@@ -44,16 +44,16 @@ fi
 
 # Frontend setup
 echo ""
-echo "🎨 Setting up frontend..."
-cd ../frontend
+echo "🎨 Setting up client..."
+cd ../client
 
 if [ ! -f ".env.local" ]; then
-    echo "Creating frontend/.env.local..."
+    echo "Creating client/.env.local..."
     echo "NEXT_PUBLIC_API_URL=http://localhost:5000" > .env.local
     echo "NEXT_PUBLIC_SOCKET_URL=http://localhost:5000" >> .env.local
-    echo "${GREEN}✓${NC} Frontend .env.local created"
+    echo "${GREEN}✓${NC} Client .env.local created"
 else
-    echo "${GREEN}✓${NC} Frontend .env.local exists"
+    echo "${GREEN}✓${NC} Client .env.local exists"
 fi
 
 cd ..
@@ -66,6 +66,6 @@ echo ""
 echo "Next steps:"
 echo "1. Update backend/.env with your MySQL password"
 echo "2. Start backend:  cd backend && npm run dev"
-echo "3. Start frontend: cd frontend && npm run dev"
+echo "3. Start client:   cd client && npm run dev"
 echo "4. Open http://localhost:3000"
 echo ""
