@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@theme {
+  /* Primary Colors - Deep Blue/Purple */
+  --color-primary-50: hsl(250, 70%, 95%);
+  --color-primary-100: hsl(250, 70%, 90%);
+  --color-primary-200: hsl(250, 70%, 80%);
+  --color-primary-300: hsl(250, 70%, 70%);
+  --color-primary-400: hsl(250, 70%, 60%);
+  --color-primary-500: hsl(250, 70%, 55%);
+  --color-primary-600: hsl(250, 70%, 45%);
+  --color-primary-700: hsl(250, 70%, 35%);
+  --color-primary-800: hsl(250, 70%, 25%);
+  --color-primary-900: hsl(250, 70%, 15%);
+
+  /* Accent - Vibrant Cyan */
+  --color-accent-500: hsl(190, 80%, 50%);
+  --color-accent-600: hsl(190, 80%, 40%);
+
+  /* Custom Colors */
+  --color-bg-light: hsl(0, 0%, 98%);
+  --color-surface-light: hsl(0, 0%, 100%);
+  --color-text-light: hsl(220, 20%, 20%);
+  --color-text-light-secondary: hsl(220, 15%, 50%);
+
+  --color-bg-dark: hsl(220, 20%, 10%);
+  --color-surface-dark: hsl(220, 18%, 15%);
+  --color-surface-dark-hover: hsl(220, 18%, 20%);
+  --color-text-dark: hsl(0, 0%, 95%);
+  --color-text-dark-secondary: hsl(0, 0%, 65%);
+
+  /* Semantic */
+  --color-success: hsl(140, 60%, 50%);
+  --color-error: hsl(0, 70%, 55%);
+  --color-warning: hsl(45, 100%, 50%);
+}
+
+/* Base Styles */
+body {
+  transition: colors 200ms;
+}
+
+/* Scrollbar Styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(250, 70%, 55%) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(250, 70%, 55%);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(250, 70%, 45%);
+}
+
+/* Glassmorphism */
+.glass {
+  @apply backdrop-blur-lg bg-surface-light/80 border border-white/20;
+}
+
+.glass-dark {
+  @apply backdrop-blur-lg bg-surface-dark/90 border border-white/10;
+}
+
+/* Button Styles */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-primary-500 text-white hover:bg-primary-600 active:scale-95;
+}
+
+.btn-secondary {
+  @apply bg-surface-dark border border-white/20 text-text-dark hover:bg-surface-dark-hover;
+}
+
+/* Input Styles */
+.input {
+  @apply w-full px-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500;
+}
+
+.input-light {
+  @apply bg-white border-gray-300 text-text-light;
+}
+
+.input-dark {
+  @apply bg-surface-dark border-white/20 text-text-dark placeholder:text-text-dark-secondary;
+}
+
+/* Card Styles */
+.card {
+  @apply rounded-xl p-6 transition-all duration-200;
+}
+
+.card-light {
+  @apply bg-white shadow-lg;
+}
+
+.card-dark {
+  @apply bg-surface-dark border border-white/10;
+}
+
+/* Message Bubble */
+.message-sent {
+  @apply bg-primary-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[70%] ml-auto;
+}
+
+.message-received {
+  @apply bg-surface-dark text-text-dark rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%];
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  @apply bg-bg-dark text-text-dark;
+}
