@@ -321,7 +321,9 @@ export default function ChatWindow({
                         </svg>
                     </label>
                     <input
-                        ref={(input) => input && input.focus()}
+                        ref={(input) => {
+                            if (input) input.focus();
+                        }}
                         autoFocus
                         type="text"
                         value={newMessage}

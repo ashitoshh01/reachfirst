@@ -28,7 +28,11 @@ export default function LoginPage() {
                 router.push('/chat');
             }, 1000);
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Login failed');
+            if (!err.response) {
+                setError('Unable to reach the server. Please check your internet connection or try again later.');
+            } else {
+                setError(err.response?.data?.error || 'Login failed');
+            }
             setLoading(false);
         }
     };
