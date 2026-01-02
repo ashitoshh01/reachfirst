@@ -6,10 +6,13 @@ const pool = mysql.createPool({
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'academic_messaging',
-    port: process.env.DB_PORT || 3306,
+    port: parseInt(process.env.DB_PORT || '3306'),
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: process.env.DB_HOST !== 'localhost' ? {
+        rejectUnauthorized: false
+    } : undefined
 });
 
 // Test connection
