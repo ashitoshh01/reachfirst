@@ -97,7 +97,7 @@ nextApp.prepare().then(() => {
     const PORT = process.env.PORT || 5000;
 
     server.listen(PORT, () => {
-        console.log(`🚀 Unified server running on port ${PORT}`);
+        console.log(`🚀 Unified server running on port http://localhost:${PORT}`);
         console.log(`📡 Socket.io server ready`);
     });
 }).catch((ex) => {

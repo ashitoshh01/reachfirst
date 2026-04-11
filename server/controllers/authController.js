@@ -5,21 +5,30 @@ const User = require('../models/User');
 const authController = {
     async register(req, res) {
         try {
-            const { email, password, name, code } = req.body;
-
-            let role = 'student'; // Default fallback or strictly enforce
-
-            if (code === 'despustudents') {
-                role = 'student';
-            } else if (code === 'desputeachers') {
-                role = 'teacher';
-            } else {
-                return res.status(400).json({ error: 'Invalid invitation code' });
-            }
+            const { email, password, name } = req.body;
 
             // Validate input
             if (!email || !password || !name) {
                 return res.status(400).json({ error: 'All fields are required' });
+            }
+
+            if (!email.endsWith('@despu.edu.in')) {
+                return res.status(400).json({ error: 'Please use a valid @despu.edu.in email address' });
+            }
+
+            let role = 'student'; // Default fallback
+
+            const localPart = email.split('@')[0];
+            
+            // Student Validation: contains numbers/digits
+            if (/^[0-9A-Za-z.-]+$/.test(localPart) && /\d/.test(localPart)) {
+                role = 'student';
+            } 
+            // Teacher Validation: strictly alphabetic, periods, hyphens
+            else if (/^[A-Za-z.-]+$/.test(localPart)) {
+                role = 'teacher';
+            } else {
+                return res.status(400).json({ error: 'Invalid email format for role assignment' });
             }
 
             // Check if user already exists

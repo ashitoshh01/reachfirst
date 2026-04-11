@@ -1,5 +1,6 @@
 const Group = require('../models/Group');
 const Message = require('../models/Message');
+const User = require('../models/User');
 
 const groupController = {
     async createGroup(req, res) {
@@ -25,6 +26,49 @@ const groupController = {
         }
     },
 
+    async createTeacherGroup(req, res) {
+        try {
+            const { name, description, teacherIds } = req.body;
+
+            if (!name) {
+                return res.status(400).json({ error: 'Group name is required' });
+            }
+
+            if (!teacherIds || !Array.isArray(teacherIds) || teacherIds.length === 0) {
+                return res.status(400).json({ error: 'Teacher IDs are required' });
+            }
+
+            // Verify all teacherIds are valid teachers
+            for (const teacherId of teacherIds) {
+                const user = await User.findById(teacherId);
+                if (!user || user.role !== 'teacher') {
+                    return res.status(400).json({ error: `Invalid teacher ID: ${teacherId}` });
+                }
+            }
+
+            const groupId = await Group.create({
+                name,
+                description,
+                created_by: req.user.id,
+                is_teacher_group: true
+            });
+
+            // Add all teachers to the group (filtering out the creator if duplicated)
+            const uniqueTeacherIds = [...new Set(teacherIds)];
+            for (const teacherId of uniqueTeacherIds) {
+                if (teacherId !== req.user.id) {
+                    await Group.addMember(groupId, teacherId);
+                }
+            }
+
+            const group = await Group.findById(groupId);
+            res.status(201).json({ group });
+        } catch (error) {
+            console.error('CreateTeacherGroup error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
     async getUserGroups(req, res) {
         try {
             const groups = await Group.getUserGroups(req.user.id);
@@ -39,16 +83,26 @@ const groupController = {
         try {
             const { groupId } = req.params;
 
-            // Check if user is member
+            // Check if user is member OR is a teacher
             const isMember = await Group.isMember(groupId, req.user.id);
-            if (!isMember) {
+            if (!isMember && req.user.role !== 'teacher') {
                 return res.status(403).json({ error: 'Access denied' });
             }
 
             const group = await Group.findById(groupId);
+            if (!group) {
+                return res.status(404).json({ error: 'Group not found' });
+            }
+
             const members = await Group.getMembers(groupId);
 
-            res.json({ group, members });
+            res.json({ 
+                group: {
+                    ...group,
+                    total_members: members.length
+                }, 
+                members 
+            });
         } catch (error) {
             console.error('GetGroupDetails error:', error);
             res.status(500).json({ error: 'Server error' });

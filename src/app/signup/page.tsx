@@ -10,7 +10,6 @@ export default function SignupPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [code, setCode] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { register } = useAuth();
@@ -33,7 +32,7 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            await register(email, password, name, code);
+            await register(email, password, name);
             router.push('/chat');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Registration failed');
@@ -77,18 +76,6 @@ export default function SignupPage() {
                             placeholder="Email Address"
                             required
                         />
-                    </div>
-
-                    <div>
-                        <input
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none transition-colors"
-                            placeholder="Invitation Code"
-                            required
-                        />
-                        <p className="text-xs text-[#8696a0] mt-1 ml-1">Ask your administrator for your code</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

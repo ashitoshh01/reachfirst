@@ -61,8 +61,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // router.push('/chat'); // Let component handle redirect
     };
 
-    const register = async (email: string, password: string, name: string, code: string) => {
-        const response = await api.post('/api/auth/register', { email, password, name, code });
+const register = async (email: string, password: string, name: string) => {
+    const response = await api.post('/api/auth/register', { email, password, name });
         const { token, user } = response.data;
 
         localStorage.setItem('token', token);
@@ -73,8 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const updateProfile = async (data: Partial<User>) => {
-        const response = await api.put('/api/users/me', data);
-        const updatedUser = response.data.user;
+      const response = await api.put('/api/users/profile', data);
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
     };

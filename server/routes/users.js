@@ -7,6 +7,7 @@ router.use(authMiddleware);
 
 router.get('/search', userController.findByEmail);
 router.put('/me', userController.updateProfile);
+router.put('/profile', userController.updateProfile);
 router.delete('/me', userController.deleteAccount);
 router.get('/:id', userController.getUserDetails);
 

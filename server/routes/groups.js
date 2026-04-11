@@ -6,6 +6,7 @@ const { authMiddleware } = require('../middleware/auth');
 router.use(authMiddleware);
 
 router.post('/', groupController.createGroup);
+router.post('/teachers', groupController.createTeacherGroup);
 router.get('/', groupController.getUserGroups);
 router.get('/:groupId', groupController.getGroupDetails);
 router.post('/:groupId/members', groupController.addMember);

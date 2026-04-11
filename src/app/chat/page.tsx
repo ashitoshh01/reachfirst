@@ -8,6 +8,8 @@ import api from '@/lib/api';
 import ChatList from '@/components/chat/ChatList';
 import ChatWindow from '@/components/chat/ChatWindow';
 import ContactInfo from '@/components/chat/ContactInfo';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import NewConversationModal from '@/components/chat/NewConversationModal';
 
 interface Chat {
     id: number;
@@ -57,6 +59,11 @@ export default function ChatPage() {
     const [editBio, setEditBio] = useState('');
     const [editAvatar, setEditAvatar] = useState('');
     const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [isEditingBio, setIsEditingBio] = useState(false);
+
+    // Confirmation Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -176,7 +183,9 @@ export default function ChatPage() {
             const res = await api.post('/api/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            setEditAvatar(res.data.url);
+            const url = res.data.url;
+            setEditAvatar(url);
+            await updateProfile({ avatar_url: url });
         } catch (error) {
             console.error('Upload failed', error);
             alert('Failed to upload image');
@@ -185,33 +194,13 @@ export default function ChatPage() {
         }
     };
 
-    const handleUpdateProfile = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSavingProfile(true);
-        try {
-            await api.put('/api/users/me', {
-                name: editName,
-                bio: editBio,
-                avatar_url: editAvatar
-            });
-            window.location.reload();
-        } catch (error) {
-            console.error('Profile update failed:', error);
-            alert('Failed to update profile');
-        } finally {
-            setIsSavingProfile(false);
-        }
-    };
-
     const handleDeleteAccount = async () => {
-        if (confirm('Are you sure you want to delete your account permanently? This cannot be undone.')) {
-            try {
-                await api.delete('/api/users/me');
-                logout();
-            } catch (error) {
-                console.error('Delete failed:', error);
-                alert('Failed to delete account');
-            }
+        try {
+            await api.delete('/api/users/me');
+            logout();
+        } catch (error) {
+            console.error('Delete failed:', error);
+            alert('Failed to delete account');
         }
     };
 
@@ -263,8 +252,8 @@ export default function ChatPage() {
                                 <span className="text-[19px] font-medium mb-1">Profile</span>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-[#111b21] custom-scrollbar">
-                                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-[#111b21] custom-scrollbar max-h-screen">
+                                <div className="space-y-6">
                                     <div className="flex justify-center my-4">
                                         <div className="relative group">
                                             {(editAvatar || user.avatar_url) ? (
@@ -299,43 +288,59 @@ export default function ChatPage() {
 
                                     <div className="space-y-4">
                                         <div className="space-y-1">
-                                            <label className="text-sm text-[#00a884] font-medium">Your Name</label>
-                                            <div className="flex items-center justify-between gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none border-b-2 border-transparent focus:border-[#00a884] transition-colors"
-                                                />
-                                                <svg className="w-5 h-5 text-[#8696a0]" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
-                                            </div>
+                                            <label className="text-sm text-[#00a884] font-medium flex justify-between items-center">
+                                                Your Name
+                                            </label>
+                                            {isEditingName ? (
+                                                <div className="flex items-center justify-between gap-2 border-b-2 border-[#00a884]">
+                                                    <input
+                                                        type="text"
+                                                        value={editName}
+                                                        onChange={(e) => setEditName(e.target.value)}
+                                                        className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none transition-colors"
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <svg onClick={() => { setIsEditingName(false); setEditName(user.name); }} className="w-5 h-5 text-red-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        <svg onClick={async () => { await updateProfile({ name: editName }); setIsEditingName(false); }} className="w-5 h-5 text-[#00a884] cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="w-full py-2 text-[#d1d7db]">{user.name}</span>
+                                                    <svg onClick={() => setIsEditingName(true)} className="w-5 h-5 text-[#8696a0] cursor-pointer" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
+                                                </div>
+                                            )}
                                             <p className="text-xs text-[#8696a0]">This is not your username or pin. This name will be visible to your contacts.</p>
                                         </div>
 
                                         <div className="space-y-1 pt-4">
-                                            <label className="text-sm text-[#00a884] font-medium">About</label>
-                                            <div className="flex items-start justify-between gap-2">
-                                                <textarea
-                                                    value={editBio}
-                                                    onChange={(e) => setEditBio(e.target.value)}
-                                                    className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none border-b-2 border-transparent focus:border-[#00a884] transition-colors resize-none"
-                                                    placeholder="Hey there! I am using Academic Messenger."
-                                                    rows={1}
-                                                />
-                                                <svg className="w-5 h-5 text-[#8696a0] mt-2" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
-                                            </div>
+                                            <label className="text-sm text-[#00a884] font-medium flex justify-between items-center">
+                                                About
+                                            </label>
+                                            {isEditingBio ? (
+                                                <div className="flex items-start justify-between gap-2 border-b-2 border-[#00a884]">
+                                                    <textarea
+                                                        value={editBio}
+                                                        onChange={(e) => setEditBio(e.target.value)}
+                                                        className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none transition-colors resize-none"
+                                                        placeholder="Hey there! I am using Academic Messenger."
+                                                        rows={2}
+                                                    />
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <svg onClick={() => { setIsEditingBio(false); setEditBio(user.bio || ''); }} className="w-5 h-5 text-red-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        <svg onClick={async () => { await updateProfile({ bio: editBio }); setIsEditingBio(false); }} className="w-5 h-5 text-[#00a884] cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <span className="w-full py-2 text-[#d1d7db] whitespace-pre-wrap">{user.bio || 'Hey there! I am using Academic Messenger.'}</span>
+                                                    <svg onClick={() => setIsEditingBio(true)} className="w-5 h-5 text-[#8696a0] cursor-pointer mt-2" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
                                     <div className="pt-8 space-y-3">
-                                        <button
-                                            type="submit"
-                                            disabled={isSavingProfile}
-                                            className="w-full bg-[#00a884] hover:bg-[#008f6f] text-[#111b21] font-bold py-2.5 rounded-md transition-colors shadow-sm"
-                                        >
-                                            Save Changes
-                                        </button>
-
                                         <button
                                             type="button"
                                             onClick={logout}
@@ -347,13 +352,13 @@ export default function ChatPage() {
 
                                         <button
                                             type="button"
-                                            onClick={handleDeleteAccount}
+                                            onClick={() => setIsDeleteModalOpen(true)}
                                             className="w-full text-[#8696a0] hover:text-[#ef5350] py-2 text-xs transition-colors"
                                         >
                                             Delete account
                                         </button>
                                     </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -414,60 +419,27 @@ export default function ChatPage() {
                 </div>
             </div>
 
-            {/* Add Contact Modal */}
-            {isContactModalOpen && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-[#202c33] shadow-2xl rounded-xl w-full max-w-md overflow-hidden transform transition-all scale-100">
-                        <div className="bg-[#202c33] p-4 border-b border-[#2a3942] flex items-center gap-4">
-                            <button onClick={() => setIsContactModalOpen(false)} className="text-[#aebac1] hover:text-[#d1d7db]">
-                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></svg>
-                            </button>
-                            <h3 className="text-[#e9edef] font-medium text-lg">New Chat</h3>
-                        </div>
+            {/* New Conversation Modal */}
+            <NewConversationModal
+                isOpen={isContactModalOpen}
+                onClose={() => setIsContactModalOpen(false)}
+                onConversationCreated={() => {
+                    setIsContactModalOpen(false);
+                    loadChatsAndGroups();
+                }}
+                currentUserId={user.id}
+            />
 
-                        <div className="p-6">
-                            <form onSubmit={handleAddContact}>
-                                <div className="space-y-4">
-                                    <input
-                                        type="email"
-                                        value={contactEmail}
-                                        onChange={(e) => setContactEmail(e.target.value)}
-                                        className="w-full bg-[#111b21] border-none rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:ring-1 focus:ring-[#00a884] focus:outline-none transition-colors"
-                                        placeholder="Type contact email"
-                                        required
-                                        autoFocus
-                                    />
-                                    {contactError && (
-                                        <div className="p-3 bg-red-500/10 text-red-400 text-sm rounded">
-                                            {contactError}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mt-8 flex justify-end">
-                                    {inviteMode ? (
-                                        <button
-                                            type="button"
-                                            onClick={handleInvite}
-                                            className="bg-[#00a884] hover:bg-[#008f6f] text-[#111b21] px-6 py-2 rounded font-bold transition-colors"
-                                        >
-                                            Invite to App
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="submit"
-                                            disabled={isSearchingContact}
-                                            className="bg-[#00a884] hover:bg-[#008f6f] text-[#111b21] px-6 py-2 rounded font-bold transition-colors disabled:opacity-60"
-                                        >
-                                            {isSearchingContact ? 'Searching...' : 'Start Chat'}
-                                        </button>
-                                    )}
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                title="Delete Account"
+                message="Are you sure you want to delete your account permanently? All your chats and groups will be lost. This cannot be undone."
+                confirmText="Delete"
+                onConfirm={handleDeleteAccount}
+                onCancel={() => setIsDeleteModalOpen(false)}
+                isDestructive={true}
+            />
         </div>
     );
 }

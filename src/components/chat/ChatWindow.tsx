@@ -38,6 +38,11 @@ export default function ChatWindow({
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+
+    // File Preview States
+    const [previewFile, setPreviewFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewCaption, setPreviewCaption] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { socket } = useSocket();
 
@@ -161,44 +166,49 @@ export default function ChatWindow({
         }
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
 
         const file = e.target.files[0];
-        const formData = new FormData();
-        formData.append('image', file); // Backend expects 'image' key currently
+        setPreviewFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        e.target.value = '';
+    };
+
+    const handleSendPreview = async () => {
+        if (!previewFile) return;
 
         setSending(true);
+        const formData = new FormData();
+        formData.append('image', previewFile);
+
         try {
-            // 1. Upload File
             const uploadRes = await api.post('/api/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             const url = uploadRes.data.url;
 
-            // 2. Determine Type
             let messageType = 'file';
-            if (file.type.startsWith('image/')) messageType = 'image';
-            else if (file.type.startsWith('video/')) messageType = 'video';
+            if (previewFile.type.startsWith('image/')) messageType = 'image';
+            else if (previewFile.type.startsWith('video/')) messageType = 'video';
 
-            // 3. Send Message
             const endpoint = chatId
                 ? `/api/chats/${chatId}/messages`
                 : `/api/groups/${groupId}/messages`;
 
+            const content = previewCaption ? `${url}\n\n${previewCaption}` : url;
+
             const res = await api.post(endpoint, {
-                content: url,
+                content: content,
                 message_type: messageType
             });
 
-            // 4. Update UI (Success handled by socket/state logic mostly, but let's be safe)
             const message = res.data.message;
             setMessages((prev) => {
                 if (prev.some(m => m.id === message.id)) return prev;
                 return [...prev, message];
             });
 
-            // Emit socket
             if (socket) {
                 socket.emit('send_message', {
                     chatId,
@@ -207,14 +217,23 @@ export default function ChatWindow({
                 });
             }
 
+            // Reset preview state
+            setPreviewFile(null);
+            setPreviewUrl(null);
+            setPreviewCaption('');
+
         } catch (error) {
             console.error('File send error:', error);
             alert('Failed to send file');
         } finally {
             setSending(false);
-            // Reset input
-            e.target.value = '';
         }
+    };
+
+    const cancelPreview = () => {
+        setPreviewFile(null);
+        setPreviewUrl(null);
+        setPreviewCaption('');
     };
 
     if (loading) {
@@ -307,7 +326,58 @@ export default function ChatWindow({
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-surface-dark border-t border-white/10">
+            <div className="p-4 bg-surface-dark border-t border-white/10 flex flex-col relative">
+                {/* File Preview Pane */}
+                {previewUrl && previewFile && (
+                    <div className="absolute bottom-full left-0 w-full bg-[#111b21] border-t border-[#2a3942] p-4 flex flex-col gap-4 z-10 shadow-lg">
+                        <div className="flex justify-between items-center bg-[#202c33] p-2 rounded-t-lg">
+                            <span className="text-[#e9edef] font-medium px-2">Preview</span>
+                            <button type="button" onClick={cancelPreview} className="text-[#aebac1] hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="flex justify-center bg-[#0b141a] p-4 rounded-b-lg">
+                            {previewFile.type.startsWith('image/') ? (
+                                <img src={previewUrl} alt="Preview" className="max-h-[250px] object-contain rounded" />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-8 bg-[#202c33] rounded-lg min-w-[200px]">
+                                    <svg className="w-16 h-16 text-[#8696a0] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <span className="text-[#e9edef] font-medium text-center truncate max-w-[200px]" title={previewFile.name}>
+                                        {previewFile.name}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="text"
+                                value={previewCaption}
+                                onChange={(e) => setPreviewCaption(e.target.value)}
+                                placeholder="Add a caption..."
+                                className="flex-1 bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSendPreview();
+                                    }
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleSendPreview}
+                                disabled={sending}
+                                className="bg-[#00a884] hover:bg-[#008f6f] text-white p-3 rounded-full transition-colors disabled:opacity-50"
+                            >
+                                {sending ? (
+                                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <svg className="w-6 h-6 translate-x-[-1px] translate-y-[1px]" fill="currentColor" viewBox="0 0 24 24"><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" /></svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <form onSubmit={handleSend} className="flex gap-3 items-center">
                     <label className="cursor-pointer text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full">
                         <input
