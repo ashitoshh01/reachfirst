@@ -46,6 +46,8 @@ export default function ChatWindow({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { socket } = useSocket();
 
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
     useEffect(() => {
         if (chatId || groupId) {
             loadMessages();
@@ -84,11 +86,41 @@ export default function ChatWindow({
                 });
             });
 
+            socket.on('automation_result', (data: any) => {
+                if (data.automated && data.totalForwarded > 0) {
+                    const groupNames = data.forwardedTo?.map((g: any) => g.groupName).join(', ') || '';
+                    console.log(`[Automation] Auto-forwarded to: ${groupNames}`);
+                    // You could replace this with a toast notification
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'fixed top-4 right-4 bg-[#00a884] text-white px-4 py-3 rounded-lg shadow-2xl z-[9999] text-sm animate-slide-in-right flex items-center gap-2';
+                    infoDiv.innerHTML = `<span>🤖</span><span>Auto-forwarded to ${data.totalForwarded} class group(s)</span>`;
+                    document.body.appendChild(infoDiv);
+                    setTimeout(() => {
+                        infoDiv.style.opacity = '0';
+                        infoDiv.style.transition = 'opacity 0.5s';
+                        setTimeout(() => infoDiv.remove(), 500);
+                    }, 3000);
+                }
+            });
+
             return () => {
                 socket.off('message_received');
+                socket.off('automation_result');
             };
         }
     }, [socket]);
+
+    useEffect(() => {
+        adjustHeight();
+    }, [newMessage]);
+
+    const adjustHeight = () => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+        }
+    };
 
     useEffect(() => {
         scrollToBottom();
@@ -113,8 +145,8 @@ export default function ChatWindow({
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSend = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         if (!newMessage.trim() || sending) return;
 
         const content = newMessage.trim();
@@ -306,7 +338,7 @@ export default function ChatWindow({
                                             <span className="underline truncate max-w-[150px]">Download File</span>
                                         </a>
                                     ) : (
-                                        <p className="break-words white-space-pre-wrap">{msg.content}</p>
+                                        <p className="break-words whitespace-pre-wrap">{msg.content}</p>
                                     )}
                                     <span
                                         className={`text-xs mt-1 block ${isSent ? 'text-white/70' : 'text-text-dark-secondary'
@@ -378,8 +410,8 @@ export default function ChatWindow({
                     </div>
                 )}
 
-                <form onSubmit={handleSend} className="flex gap-3 items-center">
-                    <label className="cursor-pointer text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full">
+                <form onSubmit={handleSend} className="flex gap-3 items-end">
+                    <label className="cursor-pointer text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full mb-1">
                         <input
                             type="file"
                             className="hidden"
@@ -390,21 +422,30 @@ export default function ChatWindow({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                         </svg>
                     </label>
-                    <input
+                    <textarea
+                        ref={textareaRef}
                         autoFocus
-                        type="text"
+                        rows={1}
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
                         placeholder="Type a message..."
-                        className="input input-dark flex-1"
-
+                        className="input input-dark flex-1 resize-none overflow-hidden min-h-[44px]"
+                        style={{ lineHeight: '1.5' }}
                     />
                     <button
                         type="submit"
                         disabled={!newMessage.trim() || sending}
-                        className="btn btn-primary px-6"
+                        className="btn btn-primary px-6 mb-1 h-[44px] flex items-center justify-center"
                     >
-                        {sending ? '...' : 'Send'}
+                        {sending ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : 'Send'}
                     </button>
                 </form>
             </div>

@@ -6,13 +6,13 @@
 
 ```bash
 # Initialize the MySQL database
-sudo mysql < /home/ashitosh/Desktop/ReachFirst/reachfirst/database/schema.sql
+sudo mysql < /home/ashitosh/Desktop/reachfirst01/database/schema.sql
 ```
 
-### 2. Configure Backend
+### 2. Configure Environment
 
 ```bash
-cd /home/ashitosh/Desktop/ReachFirst/reachfirst/backend
+cd /home/ashitosh/Desktop/reachfirst01
 
 # Edit .env file and update:
 # - DB_PASSWORD (your MySQL root password)
@@ -21,12 +21,13 @@ cd /home/ashitosh/Desktop/ReachFirst/reachfirst/backend
 
 ## Running the Application
 
-### Terminal 1 - Backend Server
+### Start the Unified Server (Next.js + Express)
 
 ```bash
-cd /home/ashitosh/Desktop/ReachFirst/reachfirst/backend
+cd /home/ashitosh/Desktop/reachfirst01
 npm run dev
 ```
+
 
 You should see:
 ```
@@ -35,14 +36,7 @@ You should see:
 ✓ Database connected successfully
 ```
 
-### Terminal 2 - Frontend Server
-
-```bash
-cd /home/ashitosh/Desktop/ReachFirst/reachfirst/frontend
-npm run dev
 ```
-
-You should see:
 ```
 ▲ Next.js 16.1.1
 - Local: http://localhost:3000

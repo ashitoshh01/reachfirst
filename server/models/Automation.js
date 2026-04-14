@@ -67,7 +67,16 @@ const Automation = {
         return rows;
     },
 
+    // ========== Keywords CRUD ==========
+
     async getKeywords() {
+        const [rows] = await db.execute(
+            'SELECT * FROM automation_keywords WHERE is_active = TRUE ORDER BY created_at DESC'
+        );
+        return rows;
+    },
+
+    async getActiveKeywordStrings() {
         const [rows] = await db.execute(
             'SELECT keyword FROM automation_keywords WHERE is_active = TRUE'
         );
@@ -75,9 +84,41 @@ const Automation = {
     },
 
     async addKeyword(keyword) {
-        await db.execute(
+        const [result] = await db.execute(
             'INSERT INTO automation_keywords (keyword) VALUES (?)',
             [keyword]
+        );
+        return result.insertId;
+    },
+
+    async deleteKeyword(keywordId) {
+        await db.execute(
+            'DELETE FROM automation_keywords WHERE id = ?',
+            [keywordId]
+        );
+    },
+
+    async toggleKeyword(keywordId, isActive) {
+        await db.execute(
+            'UPDATE automation_keywords SET is_active = ? WHERE id = ?',
+            [isActive ? 1 : 0, keywordId]
+        );
+    },
+
+    // ========== Forward Log (dedup) ==========
+
+    async hasBeenForwarded(sourceMessageId, targetGroupId) {
+        const [rows] = await db.execute(
+            'SELECT 1 FROM automation_forwarded_log WHERE source_message_id = ? AND target_group_id = ?',
+            [sourceMessageId, targetGroupId]
+        );
+        return rows.length > 0;
+    },
+
+    async logForward(sourceGroupId, sourceMessageId, targetGroupId, forwardedMessageId) {
+        await db.execute(
+            'INSERT IGNORE INTO automation_forwarded_log (source_group_id, source_message_id, target_group_id, forwarded_message_id) VALUES (?, ?, ?, ?)',
+            [sourceGroupId, sourceMessageId, targetGroupId, forwardedMessageId]
         );
     }
 };

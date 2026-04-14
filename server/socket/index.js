@@ -1,8 +1,12 @@
 const User = require('../models/User');
 const Message = require('../models/Message');
+const AutomationService = require('../services/automationService');
 const jwt = require('jsonwebtoken');
 
 const socketHandler = (io) => {
+    // Create the automation service with io reference
+    const automationService = new AutomationService(io);
+
     // Middleware to authenticate socket connections
     io.use((socket, next) => {
         try {
@@ -36,10 +40,10 @@ const socketHandler = (io) => {
         try {
             const Chat = require('../models/Chat');
             const Group = require('../models/Group');
-            
+
             const chats = await Chat.getUserChats(socket.userId);
             chats.forEach(c => socket.join(`chat_${c.id}`));
-            
+
             const groups = await Group.getUserGroups(socket.userId);
             groups.forEach(g => socket.join(`group_${g.id}`));
         } catch (error) {
@@ -70,7 +74,7 @@ const socketHandler = (io) => {
             console.log(`User ${socket.userId} left group ${groupId}`);
         });
 
-        // Send message (broadcast to chat participants)
+        // Send message (broadcast to chat participants + trigger automation)
         socket.on('send_message', async (data) => {
             const { chatId, groupId, message } = data;
 
@@ -80,6 +84,29 @@ const socketHandler = (io) => {
             } else if (groupId) {
                 // Broadcast to group room
                 io.to(`group_${groupId}`).emit('message_received', message);
+
+                // ===== AUTOMATION HOOK =====
+                // Process message for automation (non-blocking)
+                if (message && message.id && message.content) {
+                    automationService.processGroupMessage(
+                        groupId,
+                        message.id,
+                        message.sender_id || socket.userId,
+                        message.content
+                    ).then(result => {
+                        if (result.automated) {
+                            console.log(`[Automation] Message forwarded to ${result.totalForwarded} class group(s)`);
+                            // Notify the sender about automation result
+                            socket.emit('automation_result', {
+                                groupId,
+                                messageId: message.id,
+                                ...result
+                            });
+                        }
+                    }).catch(err => {
+                        console.error('[Automation] Socket automation hook error:', err);
+                    });
+                }
             }
         });
 

@@ -1,126 +1,159 @@
 const Automation = require('../models/Automation');
-const Class = require('../models/Class');
-const Chat = require('../models/Chat');
+const Group = require('../models/Group');
 const Message = require('../models/Message');
 
 class AutomationService {
-    /**
-     * Detect if message contains automation intent keywords
-     * Uses fuzzy/partial matching
-     */
-    static async detectAutomationIntent(message) {
-        const keywords = await Automation.getKeywords();
-        const lowerMessage = message.toLowerCase();
+    constructor(io) {
+        this.io = io;
+    }
 
-        // Check for partial/fuzzy matches
+    /**
+     * Check if a message contains any active automation keywords.
+     * Returns the matched keyword or null.
+     */
+    async matchesKeyword(messageContent) {
+        const keywords = await Automation.getActiveKeywordStrings();
+        const lowerMessage = messageContent.toLowerCase();
+
         for (const keyword of keywords) {
-            const lowerKeyword = keyword.toLowerCase();
-            if (lowerMessage.includes(lowerKeyword)) {
-                return true;
+            if (lowerMessage.includes(keyword.toLowerCase())) {
+                return keyword;
             }
         }
 
-        return false;
+        return null;
     }
 
     /**
-     * Route automated message to CRs of target classes
+     * Core handler: called when a new message is sent in a group.
+     * Checks if automation is enabled, matches keywords, and forwards.
      */
-    static async routeAutomatedMessage(teacherId, messageContent, targetClassIds) {
-        // Get all CRs for the target classes
-        const crs = await Class.getAllCRs(targetClassIds);
+    async processGroupMessage(groupId, messageId, senderId, messageContent) {
+        try {
+            // 1. Check if this group is a teacher group with automation enabled
+            const group = await Group.findById(groupId);
+            if (!group || !group.is_teacher_group || !group.automation_enabled) {
+                return { automated: false };
+            }
 
-        if (crs.length === 0) {
-            return { success: false, message: 'No CRs found for selected classes' };
+            // 2. Check keyword match
+            const matchedKeyword = await this.matchesKeyword(messageContent);
+            if (!matchedKeyword) {
+                return { automated: false };
+            }
+
+            console.log(`[Automation] Keyword "${matchedKeyword}" matched in group ${groupId}, message: "${messageContent.substring(0, 50)}..."`);
+
+            // 3. Find all class groups whose class_teacher is a member of this teacher group
+            const classGroups = await Group.getClassGroupsForTeacherGroupMembers(groupId);
+            if (classGroups.length === 0) {
+                console.log(`[Automation] No class groups found for teacher group ${groupId}`);
+                return { automated: false, reason: 'no_class_groups' };
+            }
+
+            const forwardedTo = [];
+            const Chat = require('../models/Chat');
+
+            // 4. Forward the message to each class group's CR (or group if no CR)
+            for (const classGroup of classGroups) {
+                try {
+                    // Find CRs in this class group
+                    const members = await Group.getMembers(classGroup.id);
+                    const crs = members.filter(m => !!m.is_cr && !!m.is_admin);
+
+                    if (crs.length > 0) {
+                        // Forward to CRs via private chat
+                        for (const cr of crs) {
+                            // Check if already forwarded to this CR for this message (dedup)
+                            // Note: we'll use a slightly different key or just log the group/user combo
+                            const targetRoom = `chat_with_cr_${cr.id}`; // Conceptually, but we need chat_id
+
+                            // Create/Get private chat with CR
+                            const chat = await Chat.createOrGet(senderId, cr.id);
+
+                            const alreadyForwarded = await Automation.hasBeenForwarded(messageId, `chat_${chat.id}`);
+                            if (alreadyForwarded) continue;
+
+                            const forwardedContent = `📢 [Auto-forwarded from ${group.name}]\n\n${messageContent}`;
+                            const fwdMessageId = await Message.create({
+                                sender_id: senderId,
+                                chat_id: chat.id,
+                                content: forwardedContent,
+                                message_type: 'text',
+                                is_automated: true
+                            });
+
+                            await Automation.logForward(groupId, messageId, `chat_${chat.id}`, fwdMessageId);
+                            const fwdMessage = await Message.findById(fwdMessageId);
+
+                            if (this.io) {
+                                // Emit to both users in the private chat
+                                this.io.to(`chat_${chat.id}`).emit('message_received', fwdMessage);
+                                // Also emit to user-specific rooms just in case they aren't in the chat room
+                                this.io.to(`user_${cr.id}`).emit('message_received', fwdMessage);
+                            }
+
+                            forwardedTo.push({
+                                type: 'cr',
+                                crName: cr.name,
+                                crId: cr.id,
+                                groupName: classGroup.name,
+                                messageId: fwdMessageId
+                            });
+                        }
+                    } else {
+                        // Fallback: Forward to the group itself
+                        const alreadyForwarded = await Automation.hasBeenForwarded(messageId, classGroup.id);
+                        if (alreadyForwarded) {
+                            console.log(`[Automation] Message ${messageId} already forwarded to group ${classGroup.id}, skipping`);
+                            continue;
+                        }
+
+                        // Create the forwarded message in the class group
+                        const forwardedContent = `📢 [Auto-forwarded from ${group.name}]\n\n${messageContent}`;
+                        const fwdMessageId = await Message.create({
+                            sender_id: senderId,
+                            group_id: classGroup.id,
+                            content: forwardedContent,
+                            message_type: 'text',
+                            is_automated: true
+                        });
+
+                        // Log the forward for dedup
+                        await Automation.logForward(groupId, messageId, classGroup.id, fwdMessageId);
+
+                        // Get full message object for socket broadcast
+                        const fwdMessage = await Message.findById(fwdMessageId);
+
+                        // Broadcast to the target class group room via Socket.io
+                        if (this.io) {
+                            this.io.to(`group_${classGroup.id}`).emit('message_received', fwdMessage);
+                        }
+
+                        forwardedTo.push({
+                            type: 'group',
+                            groupId: classGroup.id,
+                            groupName: classGroup.name,
+                            messageId: fwdMessageId
+                        });
+
+                        console.log(`[Automation] No CR found. Forwarded message to class group "${classGroup.name}" (${classGroup.id})`);
+                    }
+                } catch (err) {
+                    console.error(`[Automation] Error forwarding to group ${classGroup.id}:`, err);
+                }
+            }
+
+            return {
+                automated: true,
+                matchedKeyword,
+                forwardedTo,
+                totalForwarded: forwardedTo.length
+            };
+        } catch (error) {
+            console.error('[Automation] Error in processGroupMessage:', error);
+            return { automated: false, error: error.message };
         }
-
-        const sentTo = [];
-
-        // Create one-to-one chat with each CR and send message
-        for (const cr of crs) {
-            const chat = await Chat.createOrGet(teacherId, cr.id);
-            const messageId = await Message.create({
-                sender_id: teacherId,
-                chat_id: chat.id,
-                content: messageContent,
-                is_automated: true
-            });
-
-            sentTo.push({
-                crId: cr.id,
-                crName: cr.name,
-                chatId: chat.id,
-                messageId
-            });
-        }
-
-        return {
-            success: true,
-            sentTo,
-            totalCRs: crs.length
-        };
-    }
-
-    /**
-     * Handle teacher message - check if automation is active and should be triggered
-     */
-    static async handleTeacherMessage(teacherId, messageContent) {
-        // Get teacher's automation config
-        const config = await Automation.getTeacherConfig(teacherId);
-
-        // Check if automation is active and approved
-        if (!config || !config.is_active || !config.is_approved) {
-            return { automated: false };
-        }
-
-        // Check if message contains trigger keywords
-        const hasIntent = await this.detectAutomationIntent(messageContent);
-
-        if (!hasIntent) {
-            return { automated: false };
-        }
-
-        // Get target classes
-        const targetClasses = await Automation.getTargetClasses(config.id);
-
-        if (targetClasses.length === 0) {
-            return { automated: false, error: 'No target classes configured' };
-        }
-
-        // Route message to CRs
-        const result = await this.routeAutomatedMessage(teacherId, messageContent, targetClasses);
-
-        return {
-            automated: true,
-            ...result
-        };
-    }
-
-    /**
-     * Handle special commands (start/stop)
-     */
-    static async handleCommand(teacherId, command) {
-        const config = await Automation.getTeacherConfig(teacherId);
-
-        if (!config) {
-            return { success: false, message: 'No automation configuration found. Please request automation first.' };
-        }
-
-        if (!config.is_approved) {
-            return { success: false, message: 'Automation not approved by admin yet.' };
-        }
-
-        const lowerCommand = command.toLowerCase().trim();
-
-        if (lowerCommand === 'start') {
-            await Automation.setActive(config.id, true);
-            return { success: true, message: 'Automation started', active: true };
-        } else if (lowerCommand === 'stop') {
-            await Automation.setActive(config.id, false);
-            return { success: true, message: 'Automation stopped', active: false };
-        }
-
-        return { success: false, message: 'Invalid command' };
     }
 }
 

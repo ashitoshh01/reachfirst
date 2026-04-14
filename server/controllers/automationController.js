@@ -69,6 +69,8 @@ const automationController = {
         }
     },
 
+    // ========== Keywords CRUD ==========
+
     async getKeywords(req, res) {
         try {
             const keywords = await Automation.getKeywords();
@@ -83,14 +85,37 @@ const automationController = {
         try {
             const { keyword } = req.body;
 
-            if (!keyword) {
+            if (!keyword || !keyword.trim()) {
                 return res.status(400).json({ error: 'Keyword is required' });
             }
 
-            await Automation.addKeyword(keyword);
-            res.json({ message: 'Keyword added successfully' });
+            const id = await Automation.addKeyword(keyword.trim());
+            res.json({ message: 'Keyword added successfully', id });
         } catch (error) {
             console.error('AddKeyword error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async deleteKeyword(req, res) {
+        try {
+            const { keywordId } = req.params;
+            await Automation.deleteKeyword(keywordId);
+            res.json({ message: 'Keyword deleted successfully' });
+        } catch (error) {
+            console.error('DeleteKeyword error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async toggleKeyword(req, res) {
+        try {
+            const { keywordId } = req.params;
+            const { is_active } = req.body;
+            await Automation.toggleKeyword(keywordId, is_active);
+            res.json({ message: 'Keyword updated successfully' });
+        } catch (error) {
+            console.error('ToggleKeyword error:', error);
             res.status(500).json({ error: 'Server error' });
         }
     }
