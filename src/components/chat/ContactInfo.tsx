@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import ConfirmationModal from "@/components/ConfirmationModal";
 
 interface ContactInfoProps {
   userId?: number;
@@ -24,6 +25,7 @@ interface GroupDetails {
   description?: string;
   avatar_url?: string;
   total_members?: number;
+  is_teacher_group?: boolean | number;
 }
 
 interface GroupMember {
@@ -56,6 +58,9 @@ export default function ContactInfo({
   const [suggestions, setSuggestions] = useState<UserDetails[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Remove Member State
+  const [memberToRemove, setMemberToRemove] = useState<GroupMember | null>(null);
+
   useEffect(() => {
     if (groupId) {
       fetchGroupDetails();
@@ -79,9 +84,15 @@ export default function ContactInfo({
         const res = await api.get(`/api/users/search?query=${addMemberInput.trim()}`);
         const fetchedUsers = res.data.users || [];
         // Filter out users who are already in the group
-        const newSuggestions = fetchedUsers.filter(
+        let newSuggestions = fetchedUsers.filter(
           (u: UserDetails) => !members.some(m => m.id === u.id)
         );
+        
+        // If it is a teacher group, filter out non-teachers
+        if (group?.is_teacher_group) {
+          newSuggestions = newSuggestions.filter((u: UserDetails) => u.role === 'teacher');
+        }
+
         setSuggestions(newSuggestions);
         setShowSuggestions(true);
       } catch (error) {
@@ -94,7 +105,7 @@ export default function ContactInfo({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [addMemberInput, members]);
+  }, [addMemberInput, members, group]);
 
   const fetchChatMedia = async () => {
     try {
@@ -137,6 +148,12 @@ export default function ContactInfo({
     setAddingMember(true);
     setAddMemberError("");
     try {
+      if (group?.is_teacher_group && selectedUser.role !== 'teacher') {
+        setAddMemberError("Only teachers can be added to a teacher group");
+        setAddingMember(false);
+        return;
+      }
+
       if (members.some(m => m.id === selectedUser.id)) {
         setAddMemberError("User is already a member");
         setAddingMember(false);
@@ -166,6 +183,12 @@ export default function ContactInfo({
       const searchRes = await api.get(`/api/users/find?email=${addMemberInput.trim()}`);
       const foundUser = searchRes.data.user;
       
+      if (group?.is_teacher_group && foundUser.role !== 'teacher') {
+        setAddMemberError("Only teachers can be added to a teacher group");
+        setAddingMember(false);
+        return;
+      }
+
       if (members.some(m => m.id === foundUser.id)) {
         setAddMemberError("User is already a member");
         setAddingMember(false);
@@ -202,15 +225,18 @@ export default function ContactInfo({
     }
   };
 
-  const handleRemoveMember = async (targetUserId: number) => {
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    const targetUserId = memberToRemove.id;
     try {
-      if(!confirm("Are you sure you want to remove this user from the group?")) return;
       await api.delete(`/api/groups/${groupId}/members/${targetUserId}`);
       // Update local state
       setMembers(prev => prev.filter(m => m.id !== targetUserId));
     } catch (error) {
       console.error("Failed to remove member", error);
       alert("Error removing member.");
+    } finally {
+      setMemberToRemove(null);
     }
   };
 
@@ -372,7 +398,7 @@ export default function ContactInfo({
                           </>
                         )}
                         <button 
-                          onClick={() => handleRemoveMember(member.id)}
+                          onClick={() => setMemberToRemove(member)}
                           className="text-xs px-2 py-1 text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded transition-colors"
                           title="Remove Member"
                         >
@@ -456,6 +482,16 @@ export default function ContactInfo({
           </div>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={!!memberToRemove}
+        title="Remove Member"
+        message={`Are you sure you want to remove ${memberToRemove?.name} from this group?`}
+        confirmText="Remove"
+        onConfirm={confirmRemoveMember}
+        onCancel={() => setMemberToRemove(null)}
+        isDestructive={true}
+      />
     </div>
   );
 }
