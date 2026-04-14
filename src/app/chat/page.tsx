@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { useRouter } from 'next/navigation';
@@ -61,6 +61,8 @@ export default function ChatPage() {
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingBio, setIsEditingBio] = useState(false);
+    const nameInputRef = useRef<HTMLInputElement | null>(null);
+    const bioInputRef = useRef<HTMLTextAreaElement | null>(null);
 
     // Confirmation Modal State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -96,6 +98,21 @@ export default function ChatPage() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isContactModalOpen, showContactInfo, sidebarView]);
+
+    useEffect(() => {
+        if (isEditingName && nameInputRef.current) {
+            nameInputRef.current.focus();
+            nameInputRef.current.select();
+        }
+    }, [isEditingName]);
+
+    useEffect(() => {
+        if (isEditingBio && bioInputRef.current) {
+            const el = bioInputRef.current;
+            el.focus();
+            el.setSelectionRange(el.value.length, el.value.length);
+        }
+    }, [isEditingBio]);
 
     const ensureAdminChat = async () => {
         try {
@@ -297,6 +314,7 @@ export default function ChatPage() {
                                                         type="text"
                                                         value={editName}
                                                         onChange={(e) => setEditName(e.target.value)}
+                                                        ref={nameInputRef}
                                                         className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none transition-colors"
                                                     />
                                                     <div className="flex items-center gap-2">
@@ -322,6 +340,7 @@ export default function ChatPage() {
                                                     <textarea
                                                         value={editBio}
                                                         onChange={(e) => setEditBio(e.target.value)}
+                                                        ref={bioInputRef}
                                                         className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none transition-colors resize-none"
                                                         placeholder="Hey there! I am using Academic Messenger."
                                                         rows={2}
@@ -366,7 +385,7 @@ export default function ChatPage() {
 
                 {/* Chat Window & Contact Info */}
                 <div className="flex-1 bg-[#0b141a] flex flex-row overflow-hidden relative">
-                    <div className="flex-1 flex flex-col h-full min-w-0 bg-[url('/chat-bg-dark.png')] bg-repeat bg-[length:400px]">
+                    <div className="flex-1 flex flex-col h-full min-w-0 bg-[url('/chat-bg-dark.png')] bg-repeat bg-[length:400px] relative">
                         {/* Main Chat Area Overlay to ensure dark theme integrity */}
                         <div className="absolute inset-0 bg-[#0b141a]/95 pointer-events-none"></div>
                         <div className="relative z-10 h-full flex flex-col">
@@ -385,6 +404,7 @@ export default function ChatPage() {
                                     userId={user.id}
                                     headerName={activeGroup.name}
                                     headerAvatar={activeGroup.avatar_url}
+                                    onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
                                 />
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-[#8696a0] border-b-[6px] border-[#00a884]">
@@ -413,6 +433,12 @@ export default function ChatPage() {
                         <ContactInfo
                             userId={activeChat.other_user_id}
                             chatId={selectedChat}
+                            onClose={() => setShowContactInfo(false)}
+                        />
+                    )}
+                    {showContactInfo && selectedGroup && activeGroup && (
+                        <ContactInfo
+                            groupId={selectedGroup}
                             onClose={() => setShowContactInfo(false)}
                         />
                     )}

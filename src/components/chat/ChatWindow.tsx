@@ -248,11 +248,11 @@ export default function ChatWindow({
         <div className="h-full flex flex-col relative">
             {/* Header */}
             <div className="h-16 border-b border-white/10 bg-surface-dark px-6 flex items-center justify-between z-10">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={onToggleContactInfo}
-                        className="relative group cursor-pointer"
-                    >
+                <button
+                    onClick={() => onToggleContactInfo && onToggleContactInfo()}
+                    className="flex items-center gap-4 group cursor-pointer"
+                >
+                    <div className="relative">
                         {headerAvatar ? (
                             <img src={headerAvatar} alt={headerName} className="w-10 h-10 rounded-full object-cover" />
                         ) : (
@@ -263,12 +263,12 @@ export default function ChatWindow({
                         {isOnline && (
                             <div className="absolute bottom-0 right-0 w-3 h-3 bg-success rounded-full border-2 border-surface-dark"></div>
                         )}
-                    </button>
-                    <div>
+                    </div>
+                    <div className="text-left">
                         <h3 className="text-white font-medium text-lg leading-tight">{headerName}</h3>
                         {isOnline && <span className="text-xs text-green-400">Online</span>}
                     </div>
-                </div>
+                </button>
             </div>
 
             {/* Messages Area */}

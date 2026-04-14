@@ -11,6 +11,7 @@ router.get('/', groupController.getUserGroups);
 router.get('/:groupId', groupController.getGroupDetails);
 router.post('/:groupId/members', groupController.addMember);
 router.delete('/:groupId/members/:userId', groupController.removeMember);
+router.put('/:groupId/members/:userId/admin', groupController.makeAdmin);
 router.delete('/:groupId', groupController.deleteGroup);
 router.post('/:groupId/messages', groupController.sendGroupMessage);
 router.get('/:groupId/messages', groupController.getGroupMessages);

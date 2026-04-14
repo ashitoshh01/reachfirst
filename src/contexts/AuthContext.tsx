@@ -72,11 +72,12 @@ const register = async (email: string, password: string, name: string) => {
         // router.push('/chat'); // Let component handle redirect
     };
 
-    const updateProfile = async (data: Partial<User>) => {
-      const response = await api.put('/api/users/profile', data);
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-    };
+        const updateProfile = async (data: Partial<User>) => {
+                const response = await api.put('/api/users/profile', data);
+                const updatedUser = response.data.user;
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+        };
 
     const logout = async () => {
         await api.post('/api/auth/logout');

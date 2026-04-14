@@ -97,9 +97,9 @@ const groupController = {
         try {
             const { groupId } = req.params;
 
-            // Check if user is member OR is a teacher
+            // Only members can view private group details
             const isMember = await Group.isMember(groupId, req.user.id);
-            if (!isMember && req.user.role !== 'teacher') {
+            if (!isMember) {
                 return res.status(403).json({ error: 'Access denied' });
             }
 
@@ -150,16 +150,34 @@ const groupController = {
         try {
             const { groupId, userId } = req.params;
 
-            // Check if requester is member
-            const isMember = await Group.isMember(groupId, req.user.id);
-            if (!isMember) {
-                return res.status(403).json({ error: 'Access denied' });
+            // Check if requester is admin (or themselves leaving)
+            const isAdmin = await Group.isAdmin(groupId, req.user.id);
+            if (!isAdmin && req.user.id !== parseInt(userId)) {
+                return res.status(403).json({ error: 'Only admins can remove members' });
             }
 
             await Group.removeMember(groupId, userId);
             res.json({ message: 'Member removed successfully' });
         } catch (error) {
             console.error('RemoveMember error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async makeAdmin(req, res) {
+        try {
+            const { groupId, userId } = req.params;
+
+            // Check if requester is admin
+            const isAdmin = await Group.isAdmin(groupId, req.user.id);
+            if (!isAdmin) {
+                return res.status(403).json({ error: 'Only admins can assign new admins' });
+            }
+
+            await Group.makeAdmin(groupId, userId);
+            res.json({ message: 'User is now an admin' });
+        } catch (error) {
+            console.error('MakeAdmin error:', error);
             res.status(500).json({ error: 'Server error' });
         }
     },

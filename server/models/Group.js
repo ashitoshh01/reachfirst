@@ -62,6 +62,21 @@ const Group = {
         return members;
     },
 
+    async isAdmin(groupId, userId) {
+        const [rows] = await db.execute(
+            'SELECT is_admin FROM group_members WHERE group_id = ? AND user_id = ?',
+            [groupId, userId]
+        );
+        return rows.length > 0 && rows[0].is_admin;
+    },
+
+    async makeAdmin(groupId, userId) {
+        await db.execute(
+            'UPDATE group_members SET is_admin = TRUE WHERE group_id = ? AND user_id = ?',
+            [groupId, userId]
+        );
+    },
+
     async isMember(groupId, userId) {
         const [rows] = await db.execute(
             'SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?',
