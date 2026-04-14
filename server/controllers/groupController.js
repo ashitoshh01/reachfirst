@@ -110,12 +110,12 @@ const groupController = {
 
             const members = await Group.getMembers(groupId);
 
-            res.json({ 
+            res.json({
                 group: {
                     ...group,
                     total_members: members.length
-                }, 
-                members 
+                },
+                members
             });
         } catch (error) {
             console.error('GetGroupDetails error:', error);
@@ -185,27 +185,62 @@ const groupController = {
                 return res.status(403).json({ error: 'Only admins can assign new admins' });
             }
 
-            const targetUser = await User.findById(userId);
-            if (!targetUser) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-
-            // If a teacher makes a student an admin (CR), remove admin rights from other students
-            if (targetUser.role === 'student') {
-                const members = await Group.getMembers(groupId);
-                for (const member of members) {
-                    if (member.role === 'student' && member.is_admin && member.id !== parseInt(userId)) {
-                        await Group.removeAdmin(groupId, member.id);
-                    }
-                }
-                // Also update the target user's global is_cr flag if it exists
-                await User.updateById(userId, { is_cr: true });
-            }
-
             await Group.makeAdmin(groupId, userId);
-            res.json({ message: 'User is now an admin/CR' });
+            res.json({ message: 'User is now an admin' });
         } catch (error) {
             console.error('MakeAdmin error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async makeCR(req, res) {
+        try {
+            const { groupId, userId } = req.params;
+
+            // Check if requester is admin
+            const isAdmin = await Group.isAdmin(groupId, req.user.id);
+            if (!isAdmin) {
+                return res.status(403).json({ error: 'Only admins can assign CR' });
+            }
+
+            const targetUser = await User.findById(userId);
+            if (!targetUser || targetUser.role !== 'student') {
+                return res.status(400).json({ error: 'Only students can be made CR' });
+            }
+
+            // If a teacher makes a student a CR, remove admin rights from other students in this group
+            const members = await Group.getMembers(groupId);
+            for (const member of members) {
+                if (member.role === 'student' && member.is_admin && member.id !== parseInt(userId)) {
+                    await Group.removeAdmin(groupId, member.id);
+                }
+            }
+
+            // Also update the target user's global is_cr flag
+            await User.updateById(userId, { is_cr: true });
+
+            await Group.makeAdmin(groupId, userId);
+            res.json({ message: 'User is now a CR' });
+        } catch (error) {
+            console.error('MakeCR error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async removeAdmin(req, res) {
+        try {
+            const { groupId, userId } = req.params;
+
+            // Check if requester is admin
+            const isAdmin = await Group.isAdmin(groupId, req.user.id);
+            if (!isAdmin) {
+                return res.status(403).json({ error: 'Only admins can remove admin rights' });
+            }
+
+            await Group.removeAdmin(groupId, userId);
+            res.json({ message: 'Admin rights removed successfully' });
+        } catch (error) {
+            console.error('RemoveAdmin error:', error);
             res.status(500).json({ error: 'Server error' });
         }
     },
@@ -278,6 +313,90 @@ const groupController = {
             res.json({ messages });
         } catch (error) {
             console.error('GetGroupMessages error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    // ========== Automation Endpoints ==========
+
+    async toggleAutomation(req, res) {
+        try {
+            const { groupId } = req.params;
+            const { enabled } = req.body;
+
+            // Check if requester is admin of the group
+            const isAdmin = await Group.isAdmin(groupId, req.user.id);
+            if (!isAdmin) {
+                return res.status(403).json({ error: 'Only admins can toggle automation' });
+            }
+
+            const group = await Group.findById(groupId);
+            if (!group) {
+                return res.status(404).json({ error: 'Group not found' });
+            }
+
+            if (!group.is_teacher_group) {
+                return res.status(400).json({ error: 'Automation can only be enabled on teacher groups' });
+            }
+
+            await Group.setAutomation(groupId, enabled);
+            res.json({
+                message: enabled ? 'Automation enabled' : 'Automation disabled',
+                automation_enabled: !!enabled
+            });
+        } catch (error) {
+            console.error('ToggleAutomation error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async setClassGroup(req, res) {
+        try {
+            const { groupId } = req.params;
+
+            // Check if requester is admin of the group
+            const isAdmin = await Group.isAdmin(groupId, req.user.id);
+            if (!isAdmin) {
+                return res.status(403).json({ error: 'Only admins can set class group' });
+            }
+
+            // The class_teacher is the current user (must be a teacher)
+            if (req.user.role !== 'teacher') {
+                return res.status(403).json({ error: 'Only teachers can mark a group as a class group' });
+            }
+
+            await Group.setClassGroup(groupId, req.user.id);
+            const group = await Group.findById(groupId);
+            res.json({ message: 'Group marked as class group', group });
+        } catch (error) {
+            console.error('SetClassGroup error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async unsetClassGroup(req, res) {
+        try {
+            const { groupId } = req.params;
+
+            const isAdmin = await Group.isAdmin(groupId, req.user.id);
+            if (!isAdmin) {
+                return res.status(403).json({ error: 'Only admins can unset class group' });
+            }
+
+            await Group.unsetClassGroup(groupId);
+            res.json({ message: 'Class group status removed' });
+        } catch (error) {
+            console.error('UnsetClassGroup error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
+    async getMyClassGroups(req, res) {
+        try {
+            const classGroups = await Group.getClassGroupsByTeacher(req.user.id);
+            res.json({ classGroups });
+        } catch (error) {
+            console.error('GetMyClassGroups error:', error);
             res.status(500).json({ error: 'Server error' });
         }
     }

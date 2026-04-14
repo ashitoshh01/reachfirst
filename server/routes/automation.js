@@ -9,7 +9,11 @@ router.post('/request', requireRole('teacher'), automationController.requestAuto
 router.get('/pending', requireRole('admin'), automationController.getPendingRequests);
 router.put('/:automationId/approve', requireRole('admin'), automationController.approveAutomation);
 router.get('/config', requireRole('teacher'), automationController.getTeacherConfig);
+
+// Keywords CRUD
 router.get('/keywords', automationController.getKeywords);
-router.post('/keywords', requireRole('admin'), automationController.addKeyword);
+router.post('/keywords', automationController.addKeyword);
+router.delete('/keywords/:keywordId', automationController.deleteKeyword);
+router.put('/keywords/:keywordId/toggle', automationController.toggleKeyword);
 
 module.exports = router;
