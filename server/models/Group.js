@@ -60,7 +60,7 @@ const Group = {
 
     async getMembers(groupId) {
         const [members] = await db.execute(`
-      SELECT u.id, u.name, u.email, u.avatar_url, u.is_online, gm.is_admin
+      SELECT u.id, u.name, u.email, u.avatar_url, u.is_online, u.role, gm.is_admin
       FROM users u
       JOIN group_members gm ON u.id = gm.user_id
       WHERE gm.group_id = ?
@@ -80,6 +80,13 @@ const Group = {
     async makeAdmin(groupId, userId) {
         await db.execute(
             'UPDATE group_members SET is_admin = TRUE WHERE group_id = ? AND user_id = ?',
+            [groupId, userId]
+        );
+    },
+
+    async removeAdmin(groupId, userId) {
+        await db.execute(
+            'UPDATE group_members SET is_admin = FALSE WHERE group_id = ? AND user_id = ?',
             [groupId, userId]
         );
     },

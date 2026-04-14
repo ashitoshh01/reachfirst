@@ -32,6 +32,7 @@ interface GroupMember {
   email: string;
   avatar_url?: string;
   is_admin?: number | boolean;
+  role?: string;
 }
 
 export default function ContactInfo({
@@ -136,11 +137,11 @@ export default function ContactInfo({
   const handleMakeAdmin = async (targetUserId: number) => {
     try {
       await api.put(`/api/groups/${groupId}/members/${targetUserId}/admin`);
-      // Update local state
-      setMembers(prev => prev.map(m => m.id === targetUserId ? { ...m, is_admin: 1 } : m));
+      // Re-fetch group to get accurate admin/CR status since others might have been removed
+      fetchGroupDetails();
     } catch (error) {
       console.error("Failed to make user admin", error);
-      alert("Error making user admin.");
+      alert("Error making user admin/CR.");
     }
   };
 
@@ -248,7 +249,7 @@ export default function ContactInfo({
                         </p>
                         {member.is_admin ? (
                           <span className="text-xs text-[#00a884] bg-[#00a884]/10 px-2 py-0.5 rounded border border-[#00a884]/20 ml-2 whitespace-nowrap">
-                            Group Admin
+                            {member.role === 'student' ? 'CR' : 'Group Admin'}
                           </span>
                         ) : null}
                       </div>
@@ -262,9 +263,9 @@ export default function ContactInfo({
                           <button 
                             onClick={() => handleMakeAdmin(member.id)}
                             className="text-xs px-2 py-1 text-white bg-blue-500/20 hover:bg-blue-500/40 rounded transition-colors"
-                            title="Make Admin"
+                            title={member.role === 'student' ? 'Make CR' : 'Make Admin'}
                           >
-                            Make Admin
+                            {member.role === 'student' ? 'Make CR' : 'Make Admin'}
                           </button>
                         )}
                         <button 

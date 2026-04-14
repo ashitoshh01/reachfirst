@@ -185,8 +185,25 @@ const groupController = {
                 return res.status(403).json({ error: 'Only admins can assign new admins' });
             }
 
+            const targetUser = await User.findById(userId);
+            if (!targetUser) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            // If a teacher makes a student an admin (CR), remove admin rights from other students
+            if (targetUser.role === 'student') {
+                const members = await Group.getMembers(groupId);
+                for (const member of members) {
+                    if (member.role === 'student' && member.is_admin && member.id !== parseInt(userId)) {
+                        await Group.removeAdmin(groupId, member.id);
+                    }
+                }
+                // Also update the target user's global is_cr flag if it exists
+                await User.updateById(userId, { is_cr: true });
+            }
+
             await Group.makeAdmin(groupId, userId);
-            res.json({ message: 'User is now an admin' });
+            res.json({ message: 'User is now an admin/CR' });
         } catch (error) {
             console.error('MakeAdmin error:', error);
             res.status(500).json({ error: 'Server error' });
