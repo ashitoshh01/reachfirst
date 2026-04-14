@@ -430,8 +430,8 @@ export default function ContactInfo({
                     onClick={handleToggleAutomation}
                     disabled={togglingAutomation}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 ${automationEnabled
-                        ? 'bg-[#00a884] shadow-[0_0_8px_rgba(0,168,132,0.4)]'
-                        : 'bg-[#3b4a54]'
+                      ? 'bg-[#00a884] shadow-[0_0_8px_rgba(0,168,132,0.4)]'
+                      : 'bg-[#3b4a54]'
                       } ${togglingAutomation ? 'opacity-50' : ''}`}
                   >
                     <span
@@ -530,8 +530,8 @@ export default function ContactInfo({
                     onClick={handleSetClassGroup}
                     disabled={settingClassGroup}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 ${group.is_class_group
-                        ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
-                        : 'bg-[#3b4a54]'
+                      ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
+                      : 'bg-[#3b4a54]'
                       } ${settingClassGroup ? 'opacity-50' : ''}`}
                   >
                     <span
@@ -540,6 +540,14 @@ export default function ContactInfo({
                     />
                   </button>
                 </div>
+                {group.is_class_group && !members.some(m => !!m.is_cr && !!m.is_admin) && (
+                  <div className="mt-3 flex items-start gap-2 p-2 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                    <span className="text-sm">⚠️</span>
+                    <p className="text-[10px] text-orange-300 leading-tight">
+                      CR not selected, automation will forward the message to the group without a selection..!
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

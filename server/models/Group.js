@@ -174,6 +174,13 @@ const Group = {
             )
         `, [teacherGroupId]);
         return rows;
+    },
+    async countUserAdminGroups(userId) {
+        const [rows] = await db.execute(
+            'SELECT COUNT(*) as count FROM group_members WHERE user_id = ? AND is_admin = TRUE',
+            [userId]
+        );
+        return rows[0].count;
     }
 };
 

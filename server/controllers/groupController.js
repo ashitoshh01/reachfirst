@@ -167,6 +167,14 @@ const groupController = {
                 return res.status(403).json({ error: 'Only admins can remove members' });
             }
 
+            const targetUser = await User.findById(userId);
+            if (targetUser && targetUser.role === 'student') {
+                const adminCount = await Group.countUserAdminGroups(userId);
+                if (adminCount <= 1) {
+                    await User.updateById(userId, { is_cr: false });
+                }
+            }
+
             await Group.removeMember(groupId, userId);
             res.json({ message: 'Member removed successfully' });
         } catch (error) {
@@ -212,6 +220,10 @@ const groupController = {
             const members = await Group.getMembers(groupId);
             for (const member of members) {
                 if (member.role === 'student' && member.is_admin && member.id !== parseInt(userId)) {
+                    const adminCount = await Group.countUserAdminGroups(member.id);
+                    if (adminCount <= 1) {
+                        await User.updateById(member.id, { is_cr: false });
+                    }
                     await Group.removeAdmin(groupId, member.id);
                 }
             }
@@ -235,6 +247,14 @@ const groupController = {
             const isAdmin = await Group.isAdmin(groupId, req.user.id);
             if (!isAdmin) {
                 return res.status(403).json({ error: 'Only admins can remove admin rights' });
+            }
+
+            const targetUser = await User.findById(userId);
+            if (targetUser && targetUser.role === 'student') {
+                const adminCount = await Group.countUserAdminGroups(userId);
+                if (adminCount <= 1) {
+                    await User.updateById(userId, { is_cr: false });
+                }
             }
 
             await Group.removeAdmin(groupId, userId);
