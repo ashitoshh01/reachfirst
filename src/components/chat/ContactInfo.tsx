@@ -50,9 +50,11 @@ export default function ContactInfo({
 
   // Add Member State
   const [showAddMember, setShowAddMember] = useState(false);
-  const [addMemberEmail, setAddMemberEmail] = useState("");
+  const [addMemberInput, setAddMemberInput] = useState("");
   const [addingMember, setAddingMember] = useState(false);
   const [addMemberError, setAddMemberError] = useState("");
+  const [suggestions, setSuggestions] = useState<UserDetails[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     if (groupId) {
@@ -64,6 +66,30 @@ export default function ContactInfo({
       fetchChatMedia();
     }
   }, [userId, groupId, chatId]);
+
+  useEffect(() => {
+    if (!addMemberInput.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const fetchSuggestions = async () => {
+      try {
+        const res = await api.get(`/api/users/search?query=${addMemberInput.trim()}`);
+        setSuggestions(res.data.users || []);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error("Failed to fetch suggestions", error);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchSuggestions();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [addMemberInput]);
 
   const fetchChatMedia = async () => {
     try {
@@ -99,14 +125,40 @@ export default function ContactInfo({
     }
   };
 
+  const handleSelectSuggestion = async (selectedUser: UserDetails) => {
+    setAddMemberInput(selectedUser.email);
+    setShowSuggestions(false);
+    
+    setAddingMember(true);
+    setAddMemberError("");
+    try {
+      if (members.some(m => m.id === selectedUser.id)) {
+        setAddMemberError("User is already a member");
+        setAddingMember(false);
+        return;
+      }
+
+      await api.post(`/api/groups/${groupId}/members`, { userId: selectedUser.id });
+      
+      fetchGroupDetails();
+      setShowAddMember(false);
+      setAddMemberInput("");
+    } catch (error: any) {
+      console.error("Failed to add member", error);
+      setAddMemberError(error.response?.data?.error || "Error adding member");
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addMemberEmail.trim()) return;
+    if (!addMemberInput.trim()) return;
     setAddingMember(true);
     setAddMemberError("");
     try {
       // Find user by email
-      const searchRes = await api.get(`/api/users/find?email=${addMemberEmail.trim()}`);
+      const searchRes = await api.get(`/api/users/find?email=${addMemberInput.trim()}`);
       const foundUser = searchRes.data.user;
       
       if (members.some(m => m.id === foundUser.id)) {
@@ -121,7 +173,7 @@ export default function ContactInfo({
       // Update local state by re-fetching group details to get member list
       fetchGroupDetails();
       setShowAddMember(false);
-      setAddMemberEmail("");
+      setAddMemberInput("");
     } catch (error: any) {
       console.error("Failed to add member", error);
       if (error.response?.status === 404) {
@@ -159,6 +211,10 @@ export default function ContactInfo({
 
   // Determine if the current authenticated user is an admin of this group
   const isCurrentUserAdmin = members.some(m => m.id === currentUser?.id && !!m.is_admin);
+  
+  const hasStudent = members.some(m => m.role === 'student');
+  const hasTeacher = members.some(m => m.role === 'teacher');
+  const isMixedGroup = hasStudent && hasTeacher;
 
   if (loading) {
     return <div className="w-[350px] shrink-0 bg-[#111b21] border-l border-[#2a3942] p-4 flex justify-center pt-20 text-white">Loading...</div>;
@@ -213,23 +269,51 @@ export default function ContactInfo({
               </div>
 
               {showAddMember && (
-                <form onSubmit={handleAddMember} className="mb-4 bg-[#202c33] p-3 rounded-lg">
-                  <input
-                    type="email"
-                    value={addMemberEmail}
-                    onChange={(e) => setAddMemberEmail(e.target.value)}
-                    placeholder="Enter user email..."
-                    className="w-full bg-transparent border-b border-[#00a884] text-white text-sm py-1 mb-2 focus:outline-none placeholder-[#8696a0]"
-                    autoFocus
-                  />
-                  {addMemberError && <p className="text-red-400 text-xs mb-2">{addMemberError}</p>}
-                  <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setShowAddMember(false)} className="text-xs text-[#8696a0] hover:text-white px-2 py-1">Cancel</button>
-                    <button type="submit" disabled={addingMember || !addMemberEmail.trim()} className="text-xs bg-[#00a884] text-white px-3 py-1 rounded hover:bg-[#008f6f] disabled:opacity-50">
-                      {addingMember ? "Adding..." : "Add"}
-                    </button>
-                  </div>
-                </form>
+                <div className="mb-4 relative">
+                  <form onSubmit={handleAddMember} className="bg-[#202c33] p-3 rounded-lg">
+                    <input
+                      type="text"
+                      value={addMemberInput}
+                      onChange={(e) => {
+                        setAddMemberInput(e.target.value);
+                        setAddMemberError("");
+                      }}
+                      placeholder="Search to add member..."
+                      className="w-full bg-transparent border-b border-[#00a884] text-white text-sm py-1 mb-2 focus:outline-none placeholder-[#8696a0]"
+                      autoFocus
+                    />
+                    {addMemberError && <p className="text-red-400 text-xs mb-2">{addMemberError}</p>}
+                    <div className="flex justify-end gap-2">
+                      <button type="button" onClick={() => { setShowAddMember(false); setSuggestions([]); setAddMemberInput(""); }} className="text-xs text-[#8696a0] hover:text-white px-2 py-1">Cancel</button>
+                      <button type="submit" disabled={addingMember || !addMemberInput.trim()} className="text-xs bg-[#00a884] text-white px-3 py-1 rounded hover:bg-[#008f6f] disabled:opacity-50">
+                        {addingMember ? "Adding..." : "Add"}
+                      </button>
+                    </div>
+                  </form>
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#202c33] border border-[#2a3942] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto overflow-x-hidden">
+                      {suggestions.map((suggestion) => (
+                        <div
+                          key={suggestion.id}
+                          className="flex items-center gap-3 p-2 hover:bg-[#2a3942] cursor-pointer cursor-default transition-colors w-full"
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                        >
+                          {suggestion.avatar_url ? (
+                            <img src={suggestion.avatar_url} alt={suggestion.name} className="w-8 h-8 rounded-full shrink-0 object-cover" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-[#6a7175] flex items-center shrink-0 justify-center text-white text-xs font-medium">
+                              {suggestion.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1 w-full overflow-hidden">
+                            <p className="text-sm text-white font-medium truncate">{suggestion.name}</p>
+                            <p className="text-xs text-[#8696a0] truncate">{suggestion.email}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="space-y-4">
@@ -249,7 +333,7 @@ export default function ContactInfo({
                         </p>
                         {member.is_admin ? (
                           <span className="text-xs text-[#00a884] bg-[#00a884]/10 px-2 py-0.5 rounded border border-[#00a884]/20 ml-2 whitespace-nowrap">
-                            {member.role === 'student' ? 'CR' : 'Group Admin'}
+                            {member.role === 'student' && isMixedGroup ? 'CR' : 'Group Admin'}
                           </span>
                         ) : null}
                       </div>
@@ -260,13 +344,27 @@ export default function ContactInfo({
                     {isCurrentUserAdmin && member.id !== currentUser?.id && (
                       <div className="hidden group-hover:flex items-center gap-2 pl-2">
                         {!member.is_admin && (
-                          <button 
-                            onClick={() => handleMakeAdmin(member.id)}
-                            className="text-xs px-2 py-1 text-white bg-blue-500/20 hover:bg-blue-500/40 rounded transition-colors"
-                            title={member.role === 'student' ? 'Make CR' : 'Make Admin'}
-                          >
-                            {member.role === 'student' ? 'Make CR' : 'Make Admin'}
-                          </button>
+                          <>
+                            {member.role === 'student' && isMixedGroup ? (
+                              currentUser?.role === 'teacher' && (
+                                <button 
+                                  onClick={() => handleMakeAdmin(member.id)}
+                                  className="text-xs px-2 py-1 text-white bg-blue-500/20 hover:bg-blue-500/40 rounded transition-colors"
+                                  title="Make CR"
+                                >
+                                  Make CR
+                                </button>
+                              )
+                            ) : (
+                              <button 
+                                onClick={() => handleMakeAdmin(member.id)}
+                                className="text-xs px-2 py-1 text-white bg-blue-500/20 hover:bg-blue-500/40 rounded transition-colors"
+                                title="Make Admin"
+                              >
+                                Make Admin
+                              </button>
+                            )}
+                          </>
                         )}
                         <button 
                           onClick={() => handleRemoveMember(member.id)}
