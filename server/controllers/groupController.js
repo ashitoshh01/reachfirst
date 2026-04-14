@@ -5,7 +5,7 @@ const User = require('../models/User');
 const groupController = {
     async createGroup(req, res) {
         try {
-            const { name, description, is_teacher_group } = req.body;
+            const { name, description, is_teacher_group, memberIds } = req.body;
 
             if (!name) {
                 return res.status(400).json({ error: 'Group name is required' });
@@ -17,6 +17,20 @@ const groupController = {
                 created_by: req.user.id,
                 is_teacher_group: is_teacher_group || false
             });
+
+            // Add selected members if any
+            if (memberIds && Array.isArray(memberIds)) {
+                const uniqueMemberIds = [...new Set(memberIds)];
+                for (const userId of uniqueMemberIds) {
+                    if (userId !== req.user.id) {
+                        try {
+                            await Group.addMember(groupId, userId);
+                        } catch (err) {
+                            console.error(`Failed to add user ${userId} to group ${groupId}`, err);
+                        }
+                    }
+                }
+            }
 
             const group = await Group.findById(groupId);
             res.status(201).json({ group });

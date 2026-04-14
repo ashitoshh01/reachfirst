@@ -5,7 +5,8 @@ const { authMiddleware } = require('../middleware/auth');
 
 router.use(authMiddleware);
 
-router.get('/search', userController.findByEmail);
+router.get('/search', userController.searchUsers);
+router.get('/find', userController.findByEmail);
 router.put('/me', userController.updateProfile);
 router.put('/profile', userController.updateProfile);
 router.delete('/me', userController.deleteAccount);

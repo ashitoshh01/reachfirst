@@ -30,6 +30,35 @@ const userController = {
         }
     },
 
+    async searchUsers(req, res) {
+        try {
+            const { query, role } = req.query;
+            if (!query && !role) {
+                return res.json({ users: [] });
+            }
+
+            let users;
+            if (query) {
+                users = await User.search(query);
+            } else {
+                users = await User.findByRole(role);
+            }
+
+            // Filter out requester
+            users = users.filter(u => u.id !== req.user.id);
+
+            // If role filter is provided in secondary query
+            if (role) {
+                users = users.filter(u => u.role === role);
+            }
+
+            res.json({ users });
+        } catch (error) {
+            console.error('SearchUsers error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
     async updateProfile(req, res) {
         try {
             const { name, avatar_url, bio } = req.body;

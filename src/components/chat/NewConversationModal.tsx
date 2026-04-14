@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import api from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface User {
   id: number;
@@ -26,6 +27,7 @@ export default function NewConversationModal({
   onConversationCreated,
   currentUserId,
 }: NewConversationModalProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('personal');
   
   // Personal Chat States
@@ -37,6 +39,10 @@ export default function NewConversationModal({
   // Group States
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
+  const [groupSearch, setGroupSearch] = useState('');
+  const [groupResults, setGroupResults] = useState<User[]>([]);
+  const [selectedGroupUsers, setSelectedGroupUsers] = useState<User[]>([]);
+  const [isSearchingGroupUsers, setIsSearchingGroupUsers] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [groupError, setGroupError] = useState('');
   
@@ -52,6 +58,7 @@ export default function NewConversationModal({
 
   // Debounce helpers
   const [searchDebounceTimer, setSearchDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [groupSearchDebounceTimer, setGroupSearchDebounceTimer] = useState<NodeJS.Timeout | null>(null);
   const [teacherDebounceTimer, setTeacherDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   if (!isOpen) return null;
@@ -63,6 +70,9 @@ export default function NewConversationModal({
     setSearchError('');
     setGroupName('');
     setGroupDescription('');
+    setGroupSearch('');
+    setGroupResults([]);
+    setSelectedGroupUsers([]);
     setGroupError('');
     setTeacherGroupName('');
     setTeacherGroupDescription('');
@@ -83,17 +93,13 @@ export default function NewConversationModal({
     setSearchError('');
     
     try {
-      const res = await api.get(`/api/users/search?email=${encodeURIComponent(query)}`);
-      // It returns { user } or { error }
-      if (res.data.user) {
-        if (res.data.user.id !== currentUserId) {
-            setSearchResults([res.data.user]);
-        } else {
-            setSearchError("You can't chat with yourself");
-        }
+      const res = await api.get(`/api/users/search?query=${encodeURIComponent(query)}`);
+      // It returns { users: [] }
+      if (res.data.users) {
+        setSearchResults(res.data.users);
       }
     } catch {
-        setSearchError('User not found');
+        setSearchError('Search failed');
     } finally {
       setIsSearching(false);
     }
@@ -103,7 +109,9 @@ export default function NewConversationModal({
     const value = e.target.value;
     setSearchQuery(value);
     if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-    const timer = setTimeout(() => searchUsers(value), 500);
+    
+    // Immediate search for short strings if desired, or just smaller debounce
+    const timer = setTimeout(() => searchUsers(value), 300);
     setSearchDebounceTimer(timer);
   };
 
@@ -115,6 +123,36 @@ export default function NewConversationModal({
     } catch {
       setSearchError('Failed to create chat. Please try again.');
     }
+  };
+
+  const searchForGroupUsers = async (query: string) => {
+    if (!query.trim()) {
+      setGroupResults([]);
+      return;
+    }
+    setIsSearchingGroupUsers(true);
+    try {
+      const res = await api.get(`/api/users/search?query=${encodeURIComponent(query)}`);
+      if (res.data.users) {
+        // Filter out already selected and the current user
+        const filtered = res.data.users.filter((u: User) => 
+          u.id !== currentUserId && !selectedGroupUsers.find(su => su.id === u.id)
+        );
+        setGroupResults(filtered);
+      }
+    } catch {
+      setGroupResults([]);
+    } finally {
+      setIsSearchingGroupUsers(false);
+    }
+  };
+
+  const handleGroupSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setGroupSearch(value);
+    if (groupSearchDebounceTimer) clearTimeout(groupSearchDebounceTimer);
+    const timer = setTimeout(() => searchForGroupUsers(value), 300);
+    setGroupSearchDebounceTimer(timer);
   };
 
   const handleCreateGroup = async (e: React.FormEvent) => {
@@ -129,6 +167,7 @@ export default function NewConversationModal({
         name: groupName.trim(),
         description: groupDescription.trim(),
         is_teacher_group: false,
+        memberIds: selectedGroupUsers.map(u => u.id)
       });
       resetModal();
       onConversationCreated();
@@ -148,14 +187,9 @@ export default function NewConversationModal({
     setIsSearchingTeachers(true);
     setTeacherError('');
     try {
-      const res = await api.get(`/api/users/search?email=${encodeURIComponent(query)}`);
-      if (res.data.user && res.data.user.role === 'teacher') {
-        const u = res.data.user;
-        if (!selectedTeachers.find(t => t.id === u.id) && u.id !== currentUserId) {
-            setTeacherResults([u]);
-        }
-      } else if (res.data.user) {
-        setTeacherError('User found is not a teacher');
+      const res = await api.get(`/api/users/search?query=${encodeURIComponent(query)}&role=teacher`);
+      if (res.data.users) {
+        setTeacherResults(res.data.users);
       }
     } catch {
       setTeacherResults([]);
@@ -168,7 +202,7 @@ export default function NewConversationModal({
     const value = e.target.value;
     setTeacherSearch(value);
     if (teacherDebounceTimer) clearTimeout(teacherDebounceTimer);
-    const timer = setTimeout(() => searchForTeachers(value), 500);
+    const timer = setTimeout(() => searchForTeachers(value), 300);
     setTeacherDebounceTimer(timer);
   };
 
@@ -220,12 +254,14 @@ export default function NewConversationModal({
           >
             Group
           </button>
-          <button 
-            className={`flex-1 py-3 text-sm font-medium ${activeTab === 'teacher-group' ? 'text-[#00a884] border-b-2 border-[#00a884]' : 'text-[#8696a0] hover:bg-white/5'}`}
-            onClick={() => setActiveTab('teacher-group')}
-          >
-            Teacher Group
-          </button>
+          {user?.role === 'teacher' && (
+            <button 
+              className={`flex-1 py-3 text-sm font-medium ${activeTab === 'teacher-group' ? 'text-[#00a884] border-b-2 border-[#00a884]' : 'text-[#8696a0] hover:bg-white/5'}`}
+              onClick={() => setActiveTab('teacher-group')}
+            >
+              Teacher Group
+            </button>
+          )}
         </div>
 
         {/* Body */}
@@ -244,33 +280,38 @@ export default function NewConversationModal({
               {isSearching && <div className="text-[#8696a0] text-sm">Searching...</div>}
               {searchError && <div className="text-red-400 text-sm">{searchError}</div>}
               
-              <div className="space-y-2 mt-4">
+              <div className="space-y-1 mt-4 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                 {searchResults.map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-3 bg-[#111b21] rounded-lg">
+                  <div key={user.id} className="flex items-center justify-between p-3 bg-[#111b21] hover:bg-[#2a3942] rounded-lg transition-colors group">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#00a884] rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 bg-[#00a884] rounded-full flex items-center justify-center text-white font-bold shrink-0">
                         {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full rounded-full object-cover" /> : user.name.charAt(0)}
                       </div>
-                      <div>
-                        <p className="font-medium text-[#e9edef]">{user.name}</p>
-                        <p className="text-xs text-[#8696a0]">{user.email}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-[#e9edef] truncate">{user.name}</p>
+                        <p className="text-xs text-[#8696a0] truncate">{user.email}</p>
                       </div>
                     </div>
                     <button 
                       onClick={() => handleStartChat(user.id)}
-                      className="text-sm bg-[#00a884] hover:bg-[#008f6f] text-[#111b21] px-3 py-1.5 rounded font-medium transition-colors"
+                      className="text-sm bg-[#00a884] hover:bg-[#008f6f] text-[#111b21] px-4 py-1.5 rounded font-medium transition-all opacity-0 group-hover:opacity-100"
                     >
                       Chat
                     </button>
                   </div>
                 ))}
+                {searchResults.length === 0 && searchQuery.length > 0 && !isSearching && (
+                  <div className="text-center py-4 text-[#8696a0] text-sm italic">
+                    No matching users found
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* GROUP TAB */}
           {activeTab === 'group' && (
-            <form onSubmit={handleCreateGroup} className="space-y-4">
+            <form onSubmit={handleCreateGroup} className="space-y-4 flex flex-col h-full">
               {groupError && <div className="p-3 bg-red-500/10 text-red-400 text-sm rounded">{groupError}</div>}
               <input
                 type="text"
@@ -285,9 +326,61 @@ export default function NewConversationModal({
                 onChange={e => setGroupDescription(e.target.value)}
                 className="w-full bg-[#111b21] border-none rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:ring-1 focus:ring-[#00a884] focus:outline-none resize-none"
                 placeholder="Description (Optional)"
-                rows={3}
+                rows={2}
               />
-              <div className="mt-6 flex justify-end">
+
+              <div className="pt-2 border-t border-[#2a3942]">
+                <p className="text-sm font-medium text-[#00a884] mb-2">Add Members</p>
+                <input
+                  type="text"
+                  value={groupSearch}
+                  onChange={handleGroupSearchChange}
+                  className="w-full bg-[#111b21] border border-[#2a3942] rounded-lg px-3 py-2 text-sm text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none"
+                  placeholder="Search people by name or email..."
+                />
+                
+                {/* Search Results */}
+                {groupResults.length > 0 && (
+                  <div className="mt-2 bg-[#111b21] rounded-lg p-2 max-h-32 overflow-y-auto">
+                    {groupResults.map(user => (
+                      <div key={user.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded cursor-pointer" onClick={() => { setSelectedGroupUsers([...selectedGroupUsers, user]); setGroupSearch(''); setGroupResults([]); }}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-[#00a884] rounded-full flex items-center justify-center text-white text-xs">
+                            {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full rounded-full object-cover" /> : user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-sm">{user.name}</p>
+                            <p className="text-[10px] text-[#8696a0]">{user.email}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-[#00a884] font-medium">+ Add</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {groupResults.length === 0 && groupSearch.length > 0 && !isSearchingGroupUsers && (
+                  <div className="mt-2 text-center text-sm text-[#8696a0]">No matching users found</div>
+                )}
+
+                {/* Selected Group Users */}
+                {selectedGroupUsers.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {selectedGroupUsers.map(user => (
+                      <div key={user.id} className="flex items-center gap-1.5 bg-[#2a3942] px-2 py-1 rounded-md">
+                        <div className="w-4 h-4 bg-[#00a884] rounded-full flex items-center justify-center text-[10px] text-white">
+                          {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full rounded-full object-cover" /> : user.name.charAt(0)}
+                        </div>
+                        <span className="text-xs text-[#e9edef]">{user.name.split(' ')[0]}</span>
+                        <button type="button" onClick={() => setSelectedGroupUsers(selectedGroupUsers.filter(u => u.id !== user.id))} className="text-[#8696a0] hover:text-[#ef5350] ml-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-auto pt-6 flex justify-end">
                 <button
                   type="submit"
                   disabled={isCreatingGroup}

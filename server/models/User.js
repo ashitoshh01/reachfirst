@@ -54,6 +54,20 @@ const User = {
             'UPDATE users SET is_online = ?, last_seen = CURRENT_TIMESTAMP WHERE id = ?',
             [isOnline, userId]
         );
+    },
+
+    async search(query, limit = 50) {
+        const queryStr = String(query).trim();
+        const safeLimit = parseInt(limit, 10) || 50;
+        const [rows] = await db.execute(
+            `SELECT id, email, name, role, avatar_url, is_online 
+             FROM users 
+             WHERE (email LIKE ? OR name LIKE ?) 
+             ORDER BY name ASC 
+             LIMIT ${safeLimit}`,
+            [`${queryStr}%`, `${queryStr}%`]
+        );
+        return rows;
     }
 };
 
