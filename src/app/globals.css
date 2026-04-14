@@ -36,6 +36,10 @@
 }
 
 /* Base Styles */
+html {
+  font-size: 14px;
+}
+
 body {
   transition: colors 200ms;
 }

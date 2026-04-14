@@ -259,7 +259,7 @@ export default function ChatPage() {
                         />
                     ) : (
                         // Profile Sidebar (WhatsApp Style)
-                        <div className="flex-1 flex flex-col animate-slide-in-left bg-[#111b21]">
+                        <div className="flex-1 flex flex-col animate-slide-in-left bg-[#111b21] min-h-0">
                             <div className="h-[108px] bg-[#202c33] px-6 flex items-end pb-4 gap-4 text-[#e9edef] shrink-0">
                                 <button onClick={() => setSidebarView('chats')} className="mb-1 p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors font-medium">
                                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -269,7 +269,7 @@ export default function ChatPage() {
                                 <span className="text-[19px] font-medium mb-1">Profile</span>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-[#111b21] custom-scrollbar max-h-screen">
+                            <div className="flex-1 overflow-y-auto p-6 pb-12 space-y-8 bg-[#111b21] custom-scrollbar min-h-0">
                                 <div className="space-y-6">
                                     <div className="flex justify-center my-4">
                                         <div className="relative group">
