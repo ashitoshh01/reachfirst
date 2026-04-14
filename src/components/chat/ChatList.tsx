@@ -27,6 +27,7 @@ interface ChatListProps {
     groups: Group[];
     selectedChatId: number | null;
     selectedGroupId: number | null;
+    unreadCounts?: Record<string, number>;
     onSelectChat: (id: number) => void;
     onSelectGroup: (id: number) => void;
     loading: boolean;
@@ -40,6 +41,7 @@ export default function ChatList({
     groups,
     selectedChatId,
     selectedGroupId,
+    unreadCounts = {},
     onSelectChat,
     onSelectGroup,
     loading,
@@ -141,12 +143,21 @@ export default function ChatList({
                                     <div className="flex justify-between items-baseline mb-1">
                                         <h3 className="text-[#e9edef] font-normal truncate max-w-[70%]">{group.name}</h3>
                                         {group.last_message_time && (
-                                            <span className="text-xs text-[#8696a0] mr-4">{/* Time formatting needed */}12:00</span>
+                                            <span className={`text-xs mr-4 ${unreadCounts['group_' + group.id] ? 'text-[#00a884] font-medium' : 'text-[#8696a0]'}`}>
+                                                {/* Time formatting needed */}12:00
+                                            </span>
                                         )}
                                     </div>
-                                    <p className="text-sm text-[#8696a0] truncate mr-4">
-                                        {group.last_message || 'Multi-device group'}
-                                    </p>
+                                    <div className="flex justify-between items-center mr-4">
+                                        <p className={`text-sm truncate flex-1 mr-2 ${unreadCounts['group_' + group.id] ? 'text-[#d1d7db]' : 'text-[#8696a0]'}`}>
+                                            {group.last_message || 'Multi-device group'}
+                                        </p>
+                                        {unreadCounts['group_' + group.id] > 0 && (
+                                            <span className="bg-[#00a884] text-[#111b21] text-[11px] font-bold px-[6px] py-[2px] rounded-full min-w-[20px] text-center">
+                                                {unreadCounts['group_' + group.id]}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -179,10 +190,22 @@ export default function ChatList({
                                 <div className="flex-1 min-w-0 border-b border-[#2a3942] pb-3 -mr-3">
                                     <div className="flex justify-between items-baseline mb-1">
                                         <h3 className="text-[#e9edef] font-normal truncate max-w-[70%]">{chat.other_user_name}</h3>
+                                        {chat.last_message_time && (
+                                            <span className={`text-xs mr-4 ${unreadCounts['chat_' + chat.id] ? 'text-[#00a884] font-medium' : 'text-[#8696a0]'}`}>
+                                                {/* Time formatting needed */}12:00
+                                            </span>
+                                        )}
                                     </div>
-                                    <p className="text-sm text-[#8696a0] truncate mr-4">
-                                        {chat.last_message || 'Start chatting'}
-                                    </p>
+                                    <div className="flex justify-between items-center mr-4">
+                                        <p className={`text-sm truncate flex-1 mr-2 ${unreadCounts['chat_' + chat.id] ? 'text-[#d1d7db]' : 'text-[#8696a0]'}`}>
+                                            {chat.last_message || 'Start chatting'}
+                                        </p>
+                                        {unreadCounts['chat_' + chat.id] > 0 && (
+                                            <span className="bg-[#00a884] text-[#111b21] text-[11px] font-bold px-[6px] py-[2px] rounded-full min-w-[20px] text-center flex items-center justify-center">
+                                                {unreadCounts['chat_' + chat.id]}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

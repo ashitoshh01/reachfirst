@@ -27,12 +27,19 @@ const Group = {
       SELECT 
         g.*,
         (SELECT content FROM messages WHERE group_id = g.id ORDER BY created_at DESC LIMIT 1) as last_message,
-        (SELECT created_at FROM messages WHERE group_id = g.id ORDER BY created_at DESC LIMIT 1) as last_message_time
+        (SELECT created_at FROM messages WHERE group_id = g.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
+        (SELECT COUNT(*) FROM messages m 
+         WHERE m.group_id = g.id 
+         AND m.sender_id != ? 
+         AND NOT EXISTS (
+           SELECT 1 FROM message_status ms 
+           WHERE ms.message_id = m.id AND ms.user_id = ? AND ms.status = 'read'
+         )) as unread_count
       FROM \`groups\` g
       JOIN group_members gm ON g.id = gm.group_id
       WHERE gm.user_id = ?
       ORDER BY last_message_time DESC
-    `, [userId]);
+    `, [userId, userId, userId]);
 
         return groups;
     },

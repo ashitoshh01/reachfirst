@@ -86,6 +86,24 @@ const Message = {
             [messageId, userId]
         );
         return rows[0]?.status;
+    },
+
+    async markChatMessagesAsRead(chatId, userId) {
+        await db.execute(
+            `INSERT INTO message_status (message_id, user_id, status)
+             SELECT id, ?, 'read' FROM messages WHERE chat_id = ? AND sender_id != ?
+             ON DUPLICATE KEY UPDATE status = 'read', updated_at = CURRENT_TIMESTAMP`,
+            [userId, chatId, userId]
+        );
+    },
+
+    async markGroupMessagesAsRead(groupId, userId) {
+        await db.execute(
+            `INSERT INTO message_status (message_id, user_id, status)
+             SELECT id, ?, 'read' FROM messages WHERE group_id = ? AND sender_id != ?
+             ON DUPLICATE KEY UPDATE status = 'read', updated_at = CURRENT_TIMESTAMP`,
+            [userId, groupId, userId]
+        );
     }
 };
 

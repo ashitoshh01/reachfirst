@@ -53,12 +53,19 @@ const Chat = {
         u.avatar_url as other_user_avatar,
         u.is_online as other_user_online,
         (SELECT content FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
-        (SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time
+        (SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
+        (SELECT COUNT(*) FROM messages m 
+         WHERE m.chat_id = c.id 
+         AND m.sender_id != ? 
+         AND NOT EXISTS (
+           SELECT 1 FROM message_status ms 
+           WHERE ms.message_id = m.id AND ms.user_id = ? AND ms.status = 'read'
+         )) as unread_count
       FROM chats c
       JOIN users u ON (u.id = CASE WHEN c.user1_id = ? THEN c.user2_id ELSE c.user1_id END)
       WHERE c.user1_id = ? OR c.user2_id = ?
       ORDER BY last_message_time DESC
-    `, [userId, userId, userId, userId]);
+    `, [userId, userId, userId, userId, userId, userId]);
 
         return chats;
     },

@@ -10,6 +10,7 @@ router.post('/teachers', groupController.createTeacherGroup);
 router.get('/', groupController.getUserGroups);
 router.get('/:groupId', groupController.getGroupDetails);
 router.post('/:groupId/members', groupController.addMember);
+router.put('/:groupId/read', groupController.markGroupAsRead);
 router.delete('/:groupId/members/:userId', groupController.removeMember);
 router.put('/:groupId/members/:userId/admin', groupController.makeAdmin);
 router.delete('/:groupId', groupController.deleteGroup);

@@ -101,6 +101,17 @@ const chatController = {
         }
     },
 
+    async markChatAsRead(req, res) {
+        try {
+            const { chatId } = req.params;
+            await Message.markChatMessagesAsRead(chatId, req.user.id);
+            res.json({ message: 'Chat marked as read' });
+        } catch (error) {
+            console.error('MarkChatAsRead error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
     async getChatMedia(req, res) {
         try {
             const { chatId } = req.params;

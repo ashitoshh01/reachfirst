@@ -32,6 +32,20 @@ const socketHandler = (io) => {
         // Broadcast online status to all users
         socket.broadcast.emit('user_online', { userId: socket.userId });
 
+        // Join all user's chats and groups automatically
+        try {
+            const Chat = require('../models/Chat');
+            const Group = require('../models/Group');
+            
+            const chats = await Chat.getUserChats(socket.userId);
+            chats.forEach(c => socket.join(`chat_${c.id}`));
+            
+            const groups = await Group.getUserGroups(socket.userId);
+            groups.forEach(g => socket.join(`group_${g.id}`));
+        } catch (error) {
+            console.error("Error auto-joining chat rooms:", error);
+        }
+
         // Join chat room
         socket.on('join_chat', (chatId) => {
             socket.join(`chat_${chatId}`);

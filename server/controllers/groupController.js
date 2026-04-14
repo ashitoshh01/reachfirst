@@ -146,6 +146,17 @@ const groupController = {
         }
     },
 
+    async markGroupAsRead(req, res) {
+        try {
+            const { groupId } = req.params;
+            await Message.markGroupMessagesAsRead(groupId, req.user.id);
+            res.json({ message: 'Group marked as read' });
+        } catch (error) {
+            console.error('MarkGroupAsRead error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    },
+
     async removeMember(req, res) {
         try {
             const { groupId, userId } = req.params;

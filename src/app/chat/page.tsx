@@ -19,6 +19,7 @@ interface Chat {
     other_user_online: boolean;
     last_message?: string;
     last_message_time?: string;
+    unread_count?: number;
 }
 
 interface Group {
@@ -28,6 +29,7 @@ interface Group {
     avatar_url?: string;
     last_message?: string;
     last_message_time?: string;
+    unread_count?: number;
 }
 
 export default function ChatPage() {
@@ -39,6 +41,7 @@ export default function ChatPage() {
     const [selectedChat, setSelectedChat] = useState<number | null>(null);
     const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
     const [loadingChats, setLoadingChats] = useState(true);
+    const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
     // Sidebar View State
     const [sidebarView, setSidebarView] = useState<'chats' | 'profile'>('chats');
@@ -99,6 +102,46 @@ export default function ChatPage() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isContactModalOpen, showContactInfo, sidebarView]);
 
+    // Real-time unread badge increments via socket
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleIncoming = (message: any) => {
+            const chatId = message.chat_id;
+            const groupId = message.group_id;
+            const senderId = message.sender_id;
+
+            // Don't badge for own messages
+            if (senderId === user?.id) return;
+
+            if (chatId) {
+                // Only increment if this chat is NOT currently open
+                setSelectedChat(current => {
+                    if (current !== chatId) {
+                        setUnreadCounts(prev => ({
+                            ...prev,
+                            [`chat_${chatId}`]: (prev[`chat_${chatId}`] || 0) + 1
+                        }));
+                    }
+                    return current;
+                });
+            } else if (groupId) {
+                setSelectedGroup(current => {
+                    if (current !== groupId) {
+                        setUnreadCounts(prev => ({
+                            ...prev,
+                            [`group_${groupId}`]: (prev[`group_${groupId}`] || 0) + 1
+                        }));
+                    }
+                    return current;
+                });
+            }
+        };
+
+        socket.on('message_received', handleIncoming);
+        return () => { socket.off('message_received', handleIncoming); };
+    }, [socket, user?.id]);
+
     useEffect(() => {
         if (isEditingName && nameInputRef.current) {
             nameInputRef.current.focus();
@@ -132,8 +175,16 @@ export default function ChatPage() {
                 api.get('/api/chats'),
                 api.get('/api/groups')
             ]);
-            setChats(chatsRes.data.chats);
-            setGroups(groupsRes.data.groups);
+            const fetchedChats: Chat[] = chatsRes.data.chats;
+            const fetchedGroups: Group[] = groupsRes.data.groups;
+            setChats(fetchedChats);
+            setGroups(fetchedGroups);
+
+            // Seed unread counts from API
+            const counts: Record<string, number> = {};
+            fetchedChats.forEach(c => { if (c.unread_count && c.unread_count > 0) counts[`chat_${c.id}`] = c.unread_count; });
+            fetchedGroups.forEach(g => { if (g.unread_count && g.unread_count > 0) counts[`group_${g.id}`] = g.unread_count; });
+            setUnreadCounts(counts);
         } catch (error) {
             console.error('Error loading chats:', error);
         } finally {
@@ -244,8 +295,25 @@ export default function ChatPage() {
                             groups={groups}
                             selectedChatId={selectedChat}
                             selectedGroupId={selectedGroup}
-                            onSelectChat={(id) => { setSelectedChat(id); setSelectedGroup(null); }}
-                            onSelectGroup={(id) => { setSelectedGroup(id); setSelectedChat(null); }}
+                            unreadCounts={unreadCounts}
+                            onSelectChat={(id) => {
+                                setSelectedChat(id);
+                                setSelectedGroup(null);
+                                setShowContactInfo(false);
+                                // Clear badge immediately
+                                setUnreadCounts(prev => { const n = { ...prev }; delete n[`chat_${id}`]; return n; });
+                                // Mark as read in backend (fire and forget)
+                                api.put(`/api/chats/${id}/read`).catch(() => {});
+                            }}
+                            onSelectGroup={(id) => {
+                                setSelectedGroup(id);
+                                setSelectedChat(null);
+                                setShowContactInfo(false);
+                                // Clear badge immediately
+                                setUnreadCounts(prev => { const n = { ...prev }; delete n[`group_${id}`]; return n; });
+                                // Mark as read in backend (fire and forget)
+                                api.put(`/api/groups/${id}/read`).catch(() => {});
+                            }}
                             loading={loadingChats}
                             currentUser={user}
                             onProfileClick={() => setSidebarView('profile')}

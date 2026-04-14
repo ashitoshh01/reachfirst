@@ -10,6 +10,7 @@ router.get('/', chatController.getUserChats);
 router.get('/:chatId/messages', chatController.getChatMessages);
 router.post('/:chatId/messages', authMiddleware, chatController.sendMessage);
 router.put('/messages/:messageId/read', authMiddleware, chatController.markAsRead);
+router.put('/:chatId/read', authMiddleware, chatController.markChatAsRead);
 router.get('/:chatId/media', authMiddleware, chatController.getChatMedia);
 
 module.exports = router;
