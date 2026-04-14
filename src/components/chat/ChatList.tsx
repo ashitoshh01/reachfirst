@@ -93,11 +93,6 @@ export default function ChatList({
                             <path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H14.02v-2.02h2.02v-1.002h-2.02V8.003h-1.002v2.019H10.99v1.002h2.029v2.02h1.002z"></path>
                         </svg>
                     </button>
-                    <button className="hover:text-white transition-colors" title="Menu">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                            <path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"></path>
-                        </svg>
-                    </button>
                 </div>
             </div>
 

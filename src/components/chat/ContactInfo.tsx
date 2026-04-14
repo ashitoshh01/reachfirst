@@ -47,6 +47,12 @@ export default function ContactInfo({
   const [media, setMedia] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Add Member State
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addMemberEmail, setAddMemberEmail] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
+  const [addMemberError, setAddMemberError] = useState("");
+
   useEffect(() => {
     if (groupId) {
       fetchGroupDetails();
@@ -89,6 +95,41 @@ export default function ContactInfo({
       console.error("Failed to load group details", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addMemberEmail.trim()) return;
+    setAddingMember(true);
+    setAddMemberError("");
+    try {
+      // Find user by email
+      const searchRes = await api.get(`/api/users/find?email=${addMemberEmail.trim()}`);
+      const foundUser = searchRes.data.user;
+      
+      if (members.some(m => m.id === foundUser.id)) {
+        setAddMemberError("User is already a member");
+        setAddingMember(false);
+        return;
+      }
+
+      // Add user to group
+      await api.post(`/api/groups/${groupId}/members`, { userId: foundUser.id });
+      
+      // Update local state by re-fetching group details to get member list
+      fetchGroupDetails();
+      setShowAddMember(false);
+      setAddMemberEmail("");
+    } catch (error: any) {
+      console.error("Failed to add member", error);
+      if (error.response?.status === 404) {
+          setAddMemberError("User not found");
+      } else {
+          setAddMemberError(error.response?.data?.error || "Error adding member");
+      }
+    } finally {
+      setAddingMember(false);
     }
   };
 
@@ -160,7 +201,36 @@ export default function ContactInfo({
             </div>
 
             <div className="p-4 border-b border-[#2a3942] bg-[#111b21] mt-2">
-              <p className="text-sm text-white font-medium mb-3">{members.length} members</p>
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-sm text-white font-medium">{members.length} members</p>
+                {isCurrentUserAdmin && (
+                  <button onClick={() => { setShowAddMember(!showAddMember); setAddMemberError(""); }} className="text-xs text-[#00a884] hover:underline flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Add Member
+                  </button>
+                )}
+              </div>
+
+              {showAddMember && (
+                <form onSubmit={handleAddMember} className="mb-4 bg-[#202c33] p-3 rounded-lg">
+                  <input
+                    type="email"
+                    value={addMemberEmail}
+                    onChange={(e) => setAddMemberEmail(e.target.value)}
+                    placeholder="Enter user email..."
+                    className="w-full bg-transparent border-b border-[#00a884] text-white text-sm py-1 mb-2 focus:outline-none placeholder-[#8696a0]"
+                    autoFocus
+                  />
+                  {addMemberError && <p className="text-red-400 text-xs mb-2">{addMemberError}</p>}
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setShowAddMember(false)} className="text-xs text-[#8696a0] hover:text-white px-2 py-1">Cancel</button>
+                    <button type="submit" disabled={addingMember || !addMemberEmail.trim()} className="text-xs bg-[#00a884] text-white px-3 py-1 rounded hover:bg-[#008f6f] disabled:opacity-50">
+                      {addingMember ? "Adding..." : "Add"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
               <div className="space-y-4">
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 group">
