@@ -77,7 +77,12 @@ export default function ContactInfo({
     const fetchSuggestions = async () => {
       try {
         const res = await api.get(`/api/users/search?query=${addMemberInput.trim()}`);
-        setSuggestions(res.data.users || []);
+        const fetchedUsers = res.data.users || [];
+        // Filter out users who are already in the group
+        const newSuggestions = fetchedUsers.filter(
+          (u: UserDetails) => !members.some(m => m.id === u.id)
+        );
+        setSuggestions(newSuggestions);
         setShowSuggestions(true);
       } catch (error) {
         console.error("Failed to fetch suggestions", error);
@@ -89,7 +94,7 @@ export default function ContactInfo({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [addMemberInput]);
+  }, [addMemberInput, members]);
 
   const fetchChatMedia = async () => {
     try {
