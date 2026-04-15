@@ -1,5 +1,6 @@
 .vercel
 .env
+.env.local
 *.env
 backend/.env
 backend/data_dump.json
