@@ -9,6 +9,8 @@ interface User {
     email: string;
     name: string;
     role: 'student' | 'teacher' | 'admin';
+    division: string;
+    college_year: number;
     is_cr: boolean;
     avatar_url?: string;
     bio?: string;
@@ -18,7 +20,14 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string, name: string) => Promise<void>;
+    register: (
+        email: string,
+        password: string,
+        name: string,
+        division: string,
+        collegeYear: number,
+        confirmPassword: string
+    ) => Promise<void>;
     logout: () => Promise<void>;
     updateProfile: (data: Partial<User>) => Promise<void>;
 }
@@ -57,19 +66,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         setUser(user);
-        setUser(user);
-        // router.push('/chat'); // Let component handle redirect
     };
 
-const register = async (email: string, password: string, name: string) => {
-    const response = await api.post('/api/auth/register', { email, password, name });
+    const register = async (
+        email: string,
+        password: string,
+        name: string,
+        division: string,
+        collegeYear: number,
+        confirmPassword: string
+    ) => {
+        const response = await api.post('/api/auth/register', {
+            email,
+            password,
+            confirm_password: confirmPassword,
+            name,
+            division,
+            college_year: collegeYear
+        });
         const { token, user } = response.data;
 
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         setUser(user);
-        setUser(user);
-        // router.push('/chat'); // Let component handle redirect
     };
 
         const updateProfile = async (data: Partial<User>) => {

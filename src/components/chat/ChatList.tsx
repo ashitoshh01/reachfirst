@@ -51,6 +51,12 @@ export default function ChatList({
 }: ChatListProps) {
     const [searchQuery, setSearchQuery] = useState('');
 
+    const formatTime = (timeStr?: string) => {
+        if (!timeStr) return '';
+        const date = new Date(timeStr);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     const filteredChats = chats.filter(chat =>
         chat.other_user_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -144,7 +150,7 @@ export default function ChatList({
                                         <h3 className="text-[#e9edef] font-normal truncate max-w-[70%]">{group.name}</h3>
                                         {group.last_message_time && (
                                             <span className={`text-xs mr-4 ${unreadCounts['group_' + group.id] ? 'text-[#00a884] font-medium' : 'text-[#8696a0]'}`}>
-                                                {/* Time formatting needed */}12:00
+                                                {formatTime(group.last_message_time)}
                                             </span>
                                         )}
                                     </div>
@@ -192,7 +198,7 @@ export default function ChatList({
                                         <h3 className="text-[#e9edef] font-normal truncate max-w-[70%]">{chat.other_user_name}</h3>
                                         {chat.last_message_time && (
                                             <span className={`text-xs mr-4 ${unreadCounts['chat_' + chat.id] ? 'text-[#00a884] font-medium' : 'text-[#8696a0]'}`}>
-                                                {/* Time formatting needed */}12:00
+                                                {formatTime(chat.last_message_time)}
                                             </span>
                                         )}
                                     </div>

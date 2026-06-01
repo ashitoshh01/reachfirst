@@ -1,6 +1,7 @@
 const Group = require('../models/Group');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const AutomationService = require('../services/automationService');
 
 const groupController = {
     async createGroup(req, res) {
@@ -168,7 +169,8 @@ const groupController = {
             }
 
             const targetUser = await User.findById(userId);
-            if (targetUser && targetUser.role === 'student') {
+            const isTargetAdmin = await Group.isAdmin(groupId, userId);
+            if (targetUser && targetUser.role === 'student' && isTargetAdmin) {
                 const adminCount = await Group.countUserAdminGroups(userId);
                 if (adminCount <= 1) {
                     await User.updateById(userId, { is_cr: false });
@@ -296,10 +298,14 @@ const groupController = {
                 return res.status(400).json({ error: 'Message content is required' });
             }
 
-            // Check if user is member
             const isMember = await Group.isMember(groupId, req.user.id);
             if (!isMember) {
                 return res.status(403).json({ error: 'Access denied' });
+            }
+
+            const group = await Group.findById(groupId);
+            if (!group) {
+                return res.status(404).json({ error: 'Group not found' });
             }
 
             const messageId = await Message.create({
@@ -310,7 +316,19 @@ const groupController = {
             });
 
             const message = await Message.findById(messageId);
-            res.json({ message });
+
+            let automation = { automated: false };
+            if (group.is_teacher_group && group.automation_enabled) {
+                const automationService = new AutomationService();
+                automation = await automationService.processGroupMessage(
+                    groupId,
+                    messageId,
+                    req.user.id,
+                    content
+                );
+            }
+
+            res.json({ message, automation });
         } catch (error) {
             console.error('SendGroupMessage error:', error);
             res.status(500).json({ error: 'Server error' });

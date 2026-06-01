@@ -52,16 +52,6 @@ const chatController = {
                 return res.status(400).json({ error: 'Message content is required' });
             }
 
-            // Check for automation commands (start/stop) for teachers
-            if (req.user.role === 'teacher' && (content.toLowerCase().trim() === 'start' || content.toLowerCase().trim() === 'stop')) {
-                const result = await AutomationService.handleCommand(req.user.id, content);
-                return res.json({
-                    message: 'Command processed',
-                    automation: result
-                });
-            }
-
-            // Create message
             const messageId = await Message.create({
                 sender_id: req.user.id,
                 chat_id: chatId,
@@ -70,17 +60,6 @@ const chatController = {
             });
 
             const message = await Message.findById(messageId);
-
-            // If teacher, check for automation
-            if (req.user.role === 'teacher') {
-                const automationResult = await AutomationService.handleTeacherMessage(req.user.id, content);
-                if (automationResult.automated) {
-                    return res.json({
-                        message,
-                        automation: automationResult
-                    });
-                }
-            }
 
             res.json({ message });
         } catch (error) {

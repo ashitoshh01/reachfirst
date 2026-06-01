@@ -10,6 +10,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     role ENUM('student','teacher','admin') NOT NULL,
+    division VARCHAR(50) NOT NULL,
+    college_year TINYINT NOT NULL,
     is_cr BOOLEAN DEFAULT FALSE,
     avatar_url VARCHAR(500),
     bio TEXT,
@@ -48,10 +50,14 @@ CREATE TABLE `groups` (
     description TEXT,
     created_by INT,
     is_teacher_group BOOLEAN DEFAULT FALSE,
+    is_class_group BOOLEAN DEFAULT FALSE,
+    class_teacher_id INT,
+    automation_enabled BOOLEAN DEFAULT FALSE,
     avatar_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_teacher_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- GROUP MEMBERS
@@ -150,3 +156,13 @@ INSERT INTO automation_keywords (keyword) VALUES
 ('notify students'),
 ('inform the class'),
 ('circulate to students');
+
+-- AUTOMATION FORWARD LOG
+CREATE TABLE automation_forwarded_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    source_group_id INT,
+    source_message_id INT,
+    target_group_id VARCHAR(50),
+    forwarded_message_id INT,
+    forwarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

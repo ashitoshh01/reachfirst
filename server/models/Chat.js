@@ -2,8 +2,10 @@ const db = require('../config/database');
 
 const Chat = {
     async createOrGet(user1Id, user2Id) {
+        const u1 = Number(user1Id);
+        const u2 = Number(user2Id);
         // Ensure user1_id is always the smaller id for consistency
-        const [smallerId, largerId] = user1Id < user2Id ? [user1Id, user2Id] : [user2Id, user1Id];
+        const [smallerId, largerId] = u1 < u2 ? [u1, u2] : [u2, u1];
 
         try {
             // Check if chat already exists

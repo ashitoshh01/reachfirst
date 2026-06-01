@@ -5,50 +5,66 @@ const User = require('../models/User');
 const authController = {
     async register(req, res) {
         try {
-            const { email, password, name } = req.body;
+            const { email, password, confirm_password, name, division, college_year } = req.body;
 
-            // Validate input
-            if (!email || !password || !name) {
+            if (!email || !password || !name || !division || college_year === undefined || college_year === null) {
                 return res.status(400).json({ error: 'All fields are required' });
+            }
+
+            if (confirm_password && password !== confirm_password) {
+                return res.status(400).json({ error: 'Passwords do not match' });
             }
 
             if (!email.endsWith('@despu.edu.in')) {
                 return res.status(400).json({ error: 'Please use a valid @despu.edu.in email address' });
             }
 
-            let role = 'student'; // Default fallback
-
             const localPart = email.split('@')[0];
-            
-            // Student Validation: contains numbers/digits
+            let role = null;
+
             if (/^[0-9A-Za-z.-]+$/.test(localPart) && /\d/.test(localPart)) {
                 role = 'student';
-            } 
-            // Teacher Validation: strictly alphabetic, periods, hyphens
-            else if (/^[A-Za-z.-]+$/.test(localPart)) {
+            } else if (/^[A-Za-z.-]+$/.test(localPart)) {
                 role = 'teacher';
             } else {
                 return res.status(400).json({ error: 'Invalid email format for role assignment' });
             }
 
-            // Check if user already exists
+            const normalizedDivision = String(division).trim().toUpperCase();
+            const normalizedYear = Number.parseInt(college_year, 10);
+
+            if (!normalizedDivision) {
+                return res.status(400).json({ error: 'Division is required' });
+            }
+
+            if (!Number.isInteger(normalizedYear) || normalizedYear < 1 || normalizedYear > 4) {
+                return res.status(400).json({ error: 'College year must be between 1 and 4' });
+            }
+
+            if (role === 'teacher' && !/^[A-Z]$/.test(normalizedDivision)) {
+                return res.status(400).json({ error: 'Teacher division must be a single letter such as A or B' });
+            }
+
+            if (role === 'student' && !/^[A-Z]$/.test(normalizedDivision)) {
+                return res.status(400).json({ error: 'Student division must be a single letter such as A or B' });
+            }
+
             const existingUser = await User.findByEmail(email);
             if (existingUser) {
                 return res.status(400).json({ error: 'Email already registered' });
             }
 
-            // Hash password
             const password_hash = await bcrypt.hash(password, 10);
 
-            // Create user
             const userId = await User.create({
                 email,
                 password_hash,
                 name,
-                role
+                role,
+                division: normalizedDivision,
+                college_year: normalizedYear
             });
 
-            // Generate token
             const token = jwt.sign(
                 { id: userId, email, role },
                 process.env.JWT_SECRET,
@@ -58,7 +74,14 @@ const authController = {
             res.status(201).json({
                 message: 'User registered successfully',
                 token,
-                user: { id: userId, email, name, role }
+                user: {
+                    id: userId,
+                    email,
+                    name,
+                    role,
+                    division: normalizedDivision,
+                    college_year: normalizedYear
+                }
             });
         } catch (error) {
             console.error('Register error:', error);
@@ -104,6 +127,8 @@ const authController = {
                     email: user.email,
                     name: user.name,
                     role: user.role,
+                    division: user.division,
+                    college_year: user.college_year,
                     is_cr: user.is_cr,
                     avatar_url: user.avatar_url
                 }

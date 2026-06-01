@@ -8,6 +8,8 @@ import Link from 'next/link';
 export default function SignupPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [division, setDivision] = useState('');
+    const [collegeYear, setCollegeYear] = useState('1');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
@@ -32,7 +34,7 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            await register(email, password, name);
+            await register(email, password, name, division, Number(collegeYear), confirmPassword);
             router.push('/chat');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Registration failed');
@@ -76,6 +78,32 @@ export default function SignupPage() {
                             placeholder="Email Address"
                             required
                         />
+                        <p className="mt-1 text-xs text-[#667781]">
+                            Teachers: teachername@despu.edu.in · Students: studentrollno@despu.edu.in
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            value={division}
+                            onChange={(e) => setDivision(e.target.value.toUpperCase())}
+                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none transition-colors"
+                            placeholder="Division (A, B, C)"
+                            maxLength={1}
+                            required
+                        />
+                        <select
+                            value={collegeYear}
+                            onChange={(e) => setCollegeYear(e.target.value)}
+                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] focus:border-[#00a884] focus:outline-none transition-colors"
+                            required
+                        >
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
