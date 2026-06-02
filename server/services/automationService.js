@@ -39,28 +39,33 @@ class AutomationService {
         return null;
     }
 
-    extractTargetDivision(messageContent) {
-        const divisionMatch = messageContent.match(/\b(?:div(?:ision)?\.?\s*)([A-Z])\b/i);
-        return divisionMatch ? divisionMatch[1].toUpperCase() : null;
+    extractTargetDivisions(messageContent) {
+        const regex = /\b(?:div(?:ision)?\.?\s*)([A-Z])\b/gi;
+        const matches = [...messageContent.matchAll(regex)];
+        if (matches.length === 0) return null;
+        return [...new Set(matches.map(m => m[1].toUpperCase()))];
     }
 
-    extractTargetYear(messageContent) {
-        const yearMatch = messageContent.match(/\b(1st|2nd|3rd|4th)\s*year\b/i);
-
-        if (yearMatch) {
-            const yearLabel = yearMatch[1].toLowerCase();
-            if (yearLabel.startsWith('1')) return 1;
-            if (yearLabel.startsWith('2')) return 2;
-            if (yearLabel.startsWith('3')) return 3;
-            if (yearLabel.startsWith('4')) return 4;
+    extractTargetYears(messageContent) {
+        const years = new Set();
+        
+        const yearRegex1 = /\b(1st|2nd|3rd|4th)\s*year\b/gi;
+        const matches1 = [...messageContent.matchAll(yearRegex1)];
+        for (const m of matches1) {
+            const yearLabel = m[1].toLowerCase();
+            if (yearLabel.startsWith('1')) years.add(1);
+            else if (yearLabel.startsWith('2')) years.add(2);
+            else if (yearLabel.startsWith('3')) years.add(3);
+            else if (yearLabel.startsWith('4')) years.add(4);
         }
 
-        const compactYearMatch = messageContent.match(/\byear\s*([1-4])\b/i);
-        if (compactYearMatch) {
-            return Number.parseInt(compactYearMatch[1], 10);
+        const yearRegex2 = /\byear\s*([1-4])\b/gi;
+        const matches2 = [...messageContent.matchAll(yearRegex2)];
+        for (const m of matches2) {
+            years.add(Number.parseInt(m[1], 10));
         }
 
-        return null;
+        return years.size > 0 ? [...years] : null;
     }
 
     async getSenderClassGroups(senderId) {
@@ -92,124 +97,144 @@ class AutomationService {
                 return { automated: false, reason: 'missing_teacher_profile' };
             }
 
-            const targetDivision = this.extractTargetDivision(messageContent);
-            const targetYear = this.extractTargetYear(messageContent);
-
-            if (targetDivision && targetDivision !== String(sender.division).toUpperCase()) {
-                return { automated: false, reason: 'division_mismatch' };
-            }
-
-            if (targetYear && targetYear !== Number(sender.college_year)) {
-                return { automated: false, reason: 'year_mismatch' };
-            }
-
-            // 3. Check keyword match
+            // 3. Check keyword match FIRST to avoid unnecessary DB queries
             const matchedKeyword = await this.matchesKeyword(messageContent);
             if (!matchedKeyword) {
                 return { automated: false };
             }
 
-            console.log(
-                `[Automation] Keyword "${matchedKeyword}" matched for teacher ${sender.name} (${sender.division}, Year ${sender.college_year}) in group ${groupId}`
-            );
+            const targetDivisions = this.extractTargetDivisions(messageContent) || [String(sender.division).toUpperCase()];
+            const targetYears = this.extractTargetYears(messageContent) || [Number(sender.college_year)];
 
-            // 4. Find all class groups owned by the sender teacher
-            const classGroups = await this.getSenderClassGroups(senderId);
-            if (classGroups.length === 0) {
-                console.log(`[Automation] No class groups found for teacher ${senderId}`);
-                return { automated: false, reason: 'no_class_groups' };
+            const targets = [];
+            for (const div of targetDivisions) {
+                for (const year of targetYears) {
+                    targets.push({ division: div, year: year });
+                }
             }
 
             const forwardedTo = [];
             const Chat = require('../models/Chat');
+            const db = require('../config/database');
 
-            // 5. Forward the message to each class group's CR (or group if no CR)
-            for (const classGroup of classGroups) {
-                try {
-                    const members = await Group.getMembers(classGroup.id);
-                    const crs = members.filter(m => !!m.is_cr);
+            for (const target of targets) {
+                let effectiveTeacher = sender;
 
-                    if (crs.length > 0) {
-                        for (const cr of crs) {
-                            const chat = await Chat.createOrGet(senderId, cr.id);
+                if (target.division !== String(sender.division).toUpperCase() ||
+                    target.year !== Number(sender.college_year)) {
+                    
+                    const [targetTeachers] = await db.execute(
+                        'SELECT * FROM users WHERE role = "teacher" AND division = ? AND college_year = ? LIMIT 1',
+                        [target.division, target.year]
+                    );
 
-                            const alreadyForwarded = await Automation.hasBeenForwarded(messageId, `chat_${chat.id}`);
-                            if (alreadyForwarded) continue;
+                    if (targetTeachers.length === 0) {
+                        console.log(`[Automation] No target teacher found for Div ${target.division} Year ${target.year}`);
+                        continue;
+                    }
+                    effectiveTeacher = targetTeachers[0];
+                }
 
-                            const forwardedContent = `📢 [Div ${sender.division} • ${sender.college_year} Year | Auto-forwarded from ${group.name}]\n\n${messageContent}`;
+                console.log(
+                    `[Automation] Keyword "${matchedKeyword}" matched. Using teacher ${effectiveTeacher.name} (${effectiveTeacher.division}, Year ${effectiveTeacher.college_year}) in group ${groupId}`
+                );
+
+                // 4. Find all class groups owned by the effective teacher
+                const classGroups = await this.getSenderClassGroups(effectiveTeacher.id);
+                if (classGroups.length === 0) {
+                    console.log(`[Automation] No class groups found for teacher ${effectiveTeacher.id}`);
+                    continue;
+                }
+
+                // 5. Forward the message to each class group's CR (or group if no CR)
+                for (const classGroup of classGroups) {
+                    try {
+                        const members = await Group.getMembers(classGroup.id);
+                        const crs = members.filter(m => !!m.is_cr);
+
+                        if (crs.length > 0) {
+                            for (const cr of crs) {
+                                const chat = await Chat.createOrGet(effectiveTeacher.id, cr.id);
+
+                                const alreadyForwarded = await Automation.hasBeenForwarded(messageId, `chat_${chat.id}`);
+                                if (alreadyForwarded) continue;
+
+                                const forwardedContent = `📢 [Div ${effectiveTeacher.division} • ${effectiveTeacher.college_year} Year | Auto-forwarded from ${group.name} by ${sender.name}]\n\n${messageContent}`;
+                                const fwdMessageId = await Message.create({
+                                    sender_id: effectiveTeacher.id,
+                                    chat_id: chat.id,
+                                    content: forwardedContent,
+                                    message_type: 'text',
+                                    is_automated: true
+                                });
+
+                                await Automation.logForward(groupId, messageId, `chat_${chat.id}`, fwdMessageId);
+                                const fwdMessage = await Message.findById(fwdMessageId);
+
+                                if (this.io) {
+                                    this.io.to(`chat_${chat.id}`).emit('message_received', fwdMessage);
+                                    this.io.to(`user_${cr.id}`).emit('message_received', fwdMessage);
+                                    this.io.to(`user_${effectiveTeacher.id}`).emit('message_received', fwdMessage);
+                                }
+
+                                forwardedTo.push({
+                                    type: 'cr',
+                                    crName: cr.name,
+                                    crId: cr.id,
+                                    groupName: classGroup.name,
+                                    division: effectiveTeacher.division,
+                                    collegeYear: effectiveTeacher.college_year,
+                                    messageId: fwdMessageId
+                                });
+                            }
+                        } else {
+                            const alreadyForwarded = await Automation.hasBeenForwarded(messageId, classGroup.id);
+                            if (alreadyForwarded) {
+                                console.log(`[Automation] Message ${messageId} already forwarded to group ${classGroup.id}, skipping`);
+                                continue;
+                            }
+
+                            const forwardedContent = `📢 [Div ${effectiveTeacher.division} • ${effectiveTeacher.college_year} Year | Auto-forwarded from ${group.name} by ${sender.name}]\n\n${messageContent}`;
                             const fwdMessageId = await Message.create({
-                                sender_id: senderId,
-                                chat_id: chat.id,
+                                sender_id: effectiveTeacher.id,
+                                group_id: classGroup.id,
                                 content: forwardedContent,
                                 message_type: 'text',
                                 is_automated: true
                             });
 
-                            await Automation.logForward(groupId, messageId, `chat_${chat.id}`, fwdMessageId);
+                            await Automation.logForward(groupId, messageId, classGroup.id, fwdMessageId);
+
                             const fwdMessage = await Message.findById(fwdMessageId);
 
                             if (this.io) {
-                                this.io.to(`chat_${chat.id}`).emit('message_received', fwdMessage);
-                                this.io.to(`user_${cr.id}`).emit('message_received', fwdMessage);
+                                this.io.to(`group_${classGroup.id}`).emit('message_received', fwdMessage);
+                                this.io.to(`user_${effectiveTeacher.id}`).emit('message_received', fwdMessage);
                             }
 
                             forwardedTo.push({
-                                type: 'cr',
-                                crName: cr.name,
-                                crId: cr.id,
+                                type: 'group',
+                                groupId: classGroup.id,
                                 groupName: classGroup.name,
-                                division: sender.division,
-                                collegeYear: sender.college_year,
+                                division: effectiveTeacher.division,
+                                collegeYear: effectiveTeacher.college_year,
                                 messageId: fwdMessageId
                             });
+
+                            console.log(
+                                `[Automation] Forwarded message from teacher ${effectiveTeacher.name} to class group "${classGroup.name}" (${classGroup.id})`
+                            );
                         }
-                    } else {
-                        const alreadyForwarded = await Automation.hasBeenForwarded(messageId, classGroup.id);
-                        if (alreadyForwarded) {
-                            console.log(`[Automation] Message ${messageId} already forwarded to group ${classGroup.id}, skipping`);
-                            continue;
-                        }
-
-                        const forwardedContent = `📢 [Div ${sender.division} • ${sender.college_year} Year | Auto-forwarded from ${group.name}]\n\n${messageContent}`;
-                        const fwdMessageId = await Message.create({
-                            sender_id: senderId,
-                            group_id: classGroup.id,
-                            content: forwardedContent,
-                            message_type: 'text',
-                            is_automated: true
-                        });
-
-                        await Automation.logForward(groupId, messageId, classGroup.id, fwdMessageId);
-
-                        const fwdMessage = await Message.findById(fwdMessageId);
-
-                        if (this.io) {
-                            this.io.to(`group_${classGroup.id}`).emit('message_received', fwdMessage);
-                        }
-
-                        forwardedTo.push({
-                            type: 'group',
-                            groupId: classGroup.id,
-                            groupName: classGroup.name,
-                            division: sender.division,
-                            collegeYear: sender.college_year,
-                            messageId: fwdMessageId
-                        });
-
-                        console.log(
-                            `[Automation] Forwarded message from teacher ${sender.name} to class group "${classGroup.name}" (${classGroup.id})`
-                        );
+                    } catch (err) {
+                        console.error(`[Automation] Error forwarding to group ${classGroup.id}:`, err);
                     }
-                } catch (err) {
-                    console.error(`[Automation] Error forwarding to group ${classGroup.id}:`, err);
                 }
             }
 
             return {
                 automated: true,
                 matchedKeyword,
-                targetDivision: targetDivision || String(sender.division).toUpperCase(),
-                targetYear: targetYear || Number(sender.college_year),
+                targetsProcessed: targets,
                 forwardedTo,
                 totalForwarded: forwardedTo.length
             };
