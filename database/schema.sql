@@ -1,6 +1,5 @@
 
-DROP DATABASE IF EXISTS academic_messaging;
-CREATE DATABASE academic_messaging;
+CREATE DATABASE IF NOT EXISTS academic_messaging;
 USE academic_messaging;
 
 -- USERS
