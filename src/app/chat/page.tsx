@@ -277,18 +277,18 @@ export default function ChatPage() {
 
     if (loading || !user) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#111]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+            <div className="min-h-screen flex items-center justify-center bg-bg">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
             </div>
         );
     }
 
     return (
-        <div className="h-screen flex flex-col bg-[#0b141a]">
+        <div className="h-screen flex flex-col bg-bg">
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden relative">
                 {/* Sidebar - Swappable Views */}
-                <div className="w-80 min-w-[320px] bg-[#111b21] border-r border-[#2a3942] flex flex-col z-20">
+                <div className="w-80 min-w-[320px] bg-surface border-r border-border flex flex-col z-20">
                     {sidebarView === 'chats' ? (
                         <ChatList
                             chats={chats}
@@ -327,8 +327,8 @@ export default function ChatPage() {
                         />
                     ) : (
                         // Profile Sidebar (WhatsApp Style)
-                        <div className="flex-1 flex flex-col animate-slide-in-left bg-[#111b21] min-h-0">
-                            <div className="h-[108px] bg-[#202c33] px-6 flex items-end pb-4 gap-4 text-[#e9edef] shrink-0">
+                        <div className="flex-1 flex flex-col animate-slide-in-left bg-surface min-h-0">
+                            <div className="h-[108px] bg-surface-elevated px-6 flex items-end pb-4 gap-4 text-text-primary shrink-0">
                                 <button onClick={() => setSidebarView('chats')} className="mb-1 p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors font-medium">
                                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
@@ -337,7 +337,7 @@ export default function ChatPage() {
                                 <span className="text-[19px] font-medium mb-1">Profile</span>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 pb-12 space-y-8 bg-[#111b21] custom-scrollbar min-h-0">
+                            <div className="flex-1 overflow-y-auto p-6 pb-12 space-y-8 bg-surface custom-scrollbar min-h-0">
                                 <div className="space-y-6">
                                     <div className="flex justify-center my-4">
                                         <div className="relative group">
@@ -350,7 +350,7 @@ export default function ChatPage() {
                                                 />
                                             ) : (
                                                 <div
-                                                    className="w-[200px] h-[200px] rounded-full bg-[#6a7175] flex items-center justify-center text-6xl text-white font-bold cursor-pointer hover:opacity-80"
+                                                    className="w-[200px] h-[200px] rounded-full bg-avatar flex items-center justify-center text-6xl text-white font-bold cursor-pointer hover:opacity-80"
                                                     onClick={() => document.getElementById('avatar-upload')?.click()}
                                                 >
                                                     {user.name?.charAt(0)}
@@ -367,61 +367,61 @@ export default function ChatPage() {
                                                 onChange={handleAvatarUpload}
                                                 className="hidden"
                                             />
-                                            {isSavingProfile && <div className="absolute inset-x-0 -bottom-6 text-center text-xs text-[#00a884]">Updating...</div>}
+                                            {isSavingProfile && <div className="absolute inset-x-0 -bottom-6 text-center text-xs text-primary">Updating...</div>}
                                         </div>
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="space-y-1">
-                                            <label className="text-sm text-[#00a884] font-medium flex justify-between items-center">
+                                            <label className="text-sm text-primary font-medium flex justify-between items-center">
                                                 Your Name
                                             </label>
                                             {isEditingName ? (
-                                                <div className="flex items-center justify-between gap-2 border-b-2 border-[#00a884]">
+                                                <div className="flex items-center justify-between gap-2 border-b-2 border-primary">
                                                     <input
                                                         type="text"
                                                         value={editName}
                                                         onChange={(e) => setEditName(e.target.value)}
                                                         ref={nameInputRef}
-                                                        className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none transition-colors"
+                                                        className="w-full bg-transparent py-2 text-text-body placeholder:text-text-secondary focus:outline-none transition-colors"
                                                     />
                                                     <div className="flex items-center gap-2">
-                                                        <svg onClick={() => { setIsEditingName(false); setEditName(user.name); }} className="w-5 h-5 text-red-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                        <svg onClick={async () => { await updateProfile({ name: editName }); setIsEditingName(false); }} className="w-5 h-5 text-[#00a884] cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                        <svg onClick={() => { setIsEditingName(false); setEditName(user.name); }} className="w-5 h-5 text-error cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        <svg onClick={async () => { await updateProfile({ name: editName }); setIsEditingName(false); }} className="w-5 h-5 text-primary cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center justify-between gap-2">
-                                                    <span className="w-full py-2 text-[#d1d7db]">{user.name}</span>
-                                                    <svg onClick={() => setIsEditingName(true)} className="w-5 h-5 text-[#8696a0] cursor-pointer" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
+                                                    <span className="w-full py-2 text-text-body">{user.name}</span>
+                                                    <svg onClick={() => setIsEditingName(true)} className="w-5 h-5 text-text-secondary cursor-pointer" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
                                                 </div>
                                             )}
-                                            <p className="text-xs text-[#8696a0]">This is not your username or pin. This name will be visible to your contacts.</p>
+                                            <p className="text-xs text-text-secondary">This is not your username or pin. This name will be visible to your contacts.</p>
                                         </div>
 
                                         <div className="space-y-1 pt-4">
-                                            <label className="text-sm text-[#00a884] font-medium flex justify-between items-center">
+                                            <label className="text-sm text-primary font-medium flex justify-between items-center">
                                                 About
                                             </label>
                                             {isEditingBio ? (
-                                                <div className="flex items-start justify-between gap-2 border-b-2 border-[#00a884]">
+                                                <div className="flex items-start justify-between gap-2 border-b-2 border-primary">
                                                     <textarea
                                                         value={editBio}
                                                         onChange={(e) => setEditBio(e.target.value)}
                                                         ref={bioInputRef}
-                                                        className="w-full bg-transparent py-2 text-[#d1d7db] placeholder-[#8696a0] focus:outline-none transition-colors resize-none"
+                                                        className="w-full bg-transparent py-2 text-text-body placeholder:text-text-secondary focus:outline-none transition-colors resize-none"
                                                         placeholder="Hey there! I am using Academic Messenger."
                                                         rows={2}
                                                     />
                                                     <div className="flex items-center gap-2 mt-2">
-                                                        <svg onClick={() => { setIsEditingBio(false); setEditBio(user.bio || ''); }} className="w-5 h-5 text-red-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                        <svg onClick={async () => { await updateProfile({ bio: editBio }); setIsEditingBio(false); }} className="w-5 h-5 text-[#00a884] cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                        <svg onClick={() => { setIsEditingBio(false); setEditBio(user.bio || ''); }} className="w-5 h-5 text-error cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        <svg onClick={async () => { await updateProfile({ bio: editBio }); setIsEditingBio(false); }} className="w-5 h-5 text-primary cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <span className="w-full py-2 text-[#d1d7db] whitespace-pre-wrap">{user.bio || 'Hey there! I am using Academic Messenger.'}</span>
-                                                    <svg onClick={() => setIsEditingBio(true)} className="w-5 h-5 text-[#8696a0] cursor-pointer mt-2" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
+                                                    <span className="w-full py-2 text-text-body whitespace-pre-wrap">{user.bio || 'Hey there! I am using Academic Messenger.'}</span>
+                                                    <svg onClick={() => setIsEditingBio(true)} className="w-5 h-5 text-text-secondary cursor-pointer mt-2" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" /></svg>
                                                 </div>
                                             )}
                                         </div>
@@ -431,7 +431,7 @@ export default function ChatPage() {
                                         <button
                                             type="button"
                                             onClick={logout}
-                                            className="w-full flex items-center justify-center gap-2 text-[#ef5350] hover:bg-[#ef5350]/10 py-2.5 rounded-md text-sm font-medium transition-colors"
+                                            className="w-full flex items-center justify-center gap-2 text-error hover:bg-error/10 py-2.5 rounded-md text-sm font-medium transition-colors"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                                             Logout
@@ -440,7 +440,7 @@ export default function ChatPage() {
                                         <button
                                             type="button"
                                             onClick={() => setIsDeleteModalOpen(true)}
-                                            className="w-full text-[#8696a0] hover:text-[#ef5350] py-2 text-xs transition-colors"
+                                            className="w-full text-text-secondary hover:text-error py-2 text-xs transition-colors"
                                         >
                                             Delete account
                                         </button>
@@ -452,10 +452,9 @@ export default function ChatPage() {
                 </div>
 
                 {/* Chat Window & Contact Info */}
-                <div className="flex-1 bg-[#0b141a] flex flex-row overflow-hidden relative">
+                <div className="flex-1 bg-bg flex flex-row overflow-hidden relative">
                     <div className="flex-1 flex flex-col h-full min-w-0 bg-[url('/chat-bg-dark.png')] bg-repeat bg-[length:400px] relative">
-                        {/* Main Chat Area Overlay to ensure dark theme integrity */}
-                        <div className="absolute inset-0 bg-[#0b141a]/95 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-bg/90 pointer-events-none"></div>
                         <div className="relative z-10 h-full flex flex-col">
                             {selectedChat && activeChat ? (
                                 <ChatWindow
@@ -475,19 +474,18 @@ export default function ChatPage() {
                                     onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
                                 />
                             ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-[#8696a0] border-b-[6px] border-[#00a884]">
-                                    <div className="w-[30%] max-w-[400px] mb-10 opacity-80">
-                                        {/* Illustration or Large Icon */}
-                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-[#374045]">
-                                            <path d="M2.007 6.463v12.75a2.25 2.25 0 0 0 2.25 2.25h15.75a2.25 2.25 0 0 0 2.25-2.25V6.463L12.551 16.3a.75.75 0 0 1-1.102 0L2.007 6.463ZM12 14.864l8.947-8.913a.75.75 0 0 0-.53-.22H3.582a.75.75 0 0 0-.53.22L12 14.864Z" />
+                                <div className="h-full flex flex-col items-center justify-center text-text-secondary">
+                                    <div className="w-20 h-20 mb-8 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 text-primary">
+                                            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
                                         </svg>
                                     </div>
-                                    <h2 className="text-[32px] font-light text-[#e9edef] mb-3">Academic Messenger</h2>
-                                    <p className="text-sm text-[#8696a0] max-w-md text-center leading-6">
-                                        Send and receive messages without keeping your phone online.<br />
-                                        Use Academic Messenger on up to 4 linked devices and 1 phone.
+                                    <h2 className="text-[32px] font-light text-text-primary mb-3">Academic Messenger</h2>
+                                    <p className="text-sm text-text-secondary max-w-md text-center leading-6">
+                                        Select a conversation from the sidebar to start messaging.<br />
+                                        Connect with classmates and teachers in one calm place.
                                     </p>
-                                    <div className="mt-12 flex items-center gap-1.5 text-xs text-[#667781] tracking-wider font-medium">
+                                    <div className="mt-12 flex items-center gap-1.5 text-xs text-text-muted tracking-wider font-medium">
                                         <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" /></svg>
                                         End-to-end encrypted
                                     </div>

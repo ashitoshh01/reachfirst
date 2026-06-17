@@ -44,16 +44,21 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-[#111111] text-[#e9edef] p-4">
-            <div className="w-full max-w-[450px]">
+        <div className="min-h-screen flex flex-col items-center justify-center auth-gradient text-text-primary p-4 py-12">
+            <div className="w-full max-w-[450px] auth-card animate-fade-in-up">
                 <div className="text-center mb-8">
+                    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/15 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" className="w-7 h-7 text-primary" fill="currentColor">
+                            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
+                        </svg>
+                    </div>
                     <h1 className="text-3xl font-light mb-2">Academic Messenger</h1>
-                    <p className="text-[#8696a0]">Create your account</p>
+                    <p className="text-text-secondary">Create your account</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded text-sm text-center">
+                        <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg text-sm text-center">
                             {error}
                         </div>
                     )}
@@ -63,7 +68,7 @@ export default function SignupPage() {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none transition-colors"
+                            className="input input-dark"
                             placeholder="Full Name"
                             required
                         />
@@ -74,29 +79,35 @@ export default function SignupPage() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none transition-colors"
+                            className="input input-dark"
                             placeholder="Email Address"
                             required
                         />
-                        <p className="mt-1 text-xs text-[#667781]">
+                        <p className="mt-1 text-xs text-text-muted">
                             Teachers: teachername@despu.edu.in · Students: studentrollno@despu.edu.in
                         </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <input
-                            type="text"
+                        <select
                             value={division}
-                            onChange={(e) => setDivision(e.target.value.toUpperCase())}
-                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none transition-colors"
-                            placeholder="Division (A, B, C)"
-                            maxLength={1}
+                            onChange={(e) => setDivision(e.target.value)}
+                            className="input input-dark"
                             required
-                        />
+                        >
+                            <option value="" disabled hidden>Select Division</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="N/A">N/A</option>
+                        </select>
                         <select
                             value={collegeYear}
                             onChange={(e) => setCollegeYear(e.target.value)}
-                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] focus:border-[#00a884] focus:outline-none transition-colors"
+                            className="input input-dark"
                             required
                         >
                             <option value="1">1st Year</option>
@@ -111,7 +122,7 @@ export default function SignupPage() {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none transition-colors"
+                            className="input input-dark"
                             placeholder="Password"
                             required
                         />
@@ -119,7 +130,7 @@ export default function SignupPage() {
                             type="password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full bg-[#202c33] border border-[#2a3942] rounded-lg px-4 py-3 text-[#d1d7db] placeholder-[#8696a0] focus:border-[#00a884] focus:outline-none transition-colors"
+                            className="input input-dark"
                             placeholder="Confirm"
                             required
                         />
@@ -128,24 +139,24 @@ export default function SignupPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-[#00a884] hover:bg-[#008f6f] text-[#111b21] font-bold py-3 rounded-lg transition-colors disabled:opacity-50 mt-4"
+                        className="w-full btn btn-primary py-3 rounded-lg font-semibold mt-4"
                     >
                         {loading ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
 
-                <div className="mt-8 text-center text-sm text-[#8696a0]">
+                <div className="mt-8 text-center text-sm text-text-secondary">
                     Already have an account?{' '}
-                    <Link href="/login" className="text-[#00a884] hover:underline">
+                    <Link href="/login" className="text-primary hover:underline">
                         Sign in
                     </Link>
                 </div>
             </div>
 
             <div className="fixed bottom-8 text-center">
-                <p className="text-xs text-[#667781] flex items-center justify-center gap-2">
+                <p className="text-xs text-text-muted flex items-center justify-center gap-2">
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                     </svg>
                     End-to-end encrypted
                 </p>

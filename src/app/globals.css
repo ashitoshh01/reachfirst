@@ -1,53 +1,69 @@
 @import "tailwindcss";
 
 @theme {
-  /* Primary Colors - Deep Blue/Purple */
-  --color-primary-50: hsl(250, 70%, 95%);
-  --color-primary-100: hsl(250, 70%, 90%);
-  --color-primary-200: hsl(250, 70%, 80%);
-  --color-primary-300: hsl(250, 70%, 70%);
-  --color-primary-400: hsl(250, 70%, 60%);
-  --color-primary-500: hsl(250, 70%, 55%);
-  --color-primary-600: hsl(250, 70%, 45%);
-  --color-primary-700: hsl(250, 70%, 35%);
-  --color-primary-800: hsl(250, 70%, 25%);
-  --color-primary-900: hsl(250, 70%, 15%);
+  /* Sage Twilight — core palette */
+  --color-bg: #0f1419;
+  --color-surface: #1a2229;
+  --color-surface-elevated: #243038;
+  --color-border: #2e3d47;
+  --color-primary: #6b9e8a;
+  --color-primary-hover: #5a8a78;
+  --color-accent: #9b8ec4;
+  --color-text-primary: #e8edf0;
+  --color-text-body: #d4dce3;
+  --color-text-secondary: #8b9dab;
+  --color-text-muted: #5c6f7e;
+  --color-success: #5db88a;
+  --color-error: #d97b7b;
+  --color-warning: #c9a227;
+  --color-avatar: #5a6b78;
+  --color-message-sent: #4a7c6f;
+  --color-message-sent-text: #f0f5f2;
+  --color-on-primary: #0f1419;
+  --color-toggle-off: #3b4a54;
 
-  /* Accent - Vibrant Cyan */
-  --color-accent-500: hsl(190, 80%, 50%);
-  --color-accent-600: hsl(190, 80%, 40%);
+  /* Primary scale (sage) — backward compat */
+  --color-primary-50: #f0f5f2;
+  --color-primary-100: #d9e8e0;
+  --color-primary-200: #b3d1c1;
+  --color-primary-300: #8dbaa2;
+  --color-primary-400: #6b9e8a;
+  --color-primary-500: #6b9e8a;
+  --color-primary-600: #5a8a78;
+  --color-primary-700: #4a7c6f;
+  --color-primary-800: #3a6359;
+  --color-primary-900: #2a4a43;
 
-  /* Custom Colors */
-  --color-bg-light: hsl(0, 0%, 98%);
-  --color-surface-light: hsl(0, 0%, 100%);
-  --color-text-light: hsl(220, 20%, 20%);
-  --color-text-light-secondary: hsl(220, 15%, 50%);
+  /* Accent scale (lavender) */
+  --color-accent-400: #b0a5d0;
+  --color-accent-500: #9b8ec4;
+  --color-accent-600: #8578b0;
 
-  --color-bg-dark: hsl(220, 20%, 10%);
-  --color-surface-dark: hsl(220, 18%, 15%);
-  --color-surface-dark-hover: hsl(220, 18%, 20%);
-  --color-text-dark: hsl(0, 0%, 95%);
-  --color-text-dark-secondary: hsl(0, 0%, 65%);
-
-  /* Semantic */
-  --color-success: hsl(140, 60%, 50%);
-  --color-error: hsl(0, 70%, 55%);
-  --color-warning: hsl(45, 100%, 50%);
+  /* Legacy aliases */
+  --color-bg-dark: #0f1419;
+  --color-surface-dark: #1a2229;
+  --color-surface-dark-hover: #243038;
+  --color-text-dark: #e8edf0;
+  --color-text-dark-secondary: #8b9dab;
+  --color-bg-light: #f5f7f6;
+  --color-surface-light: #ffffff;
+  --color-text-light: #1a2229;
+  --color-text-light-secondary: #5c6f7e;
 }
 
-/* Base Styles */
+/* Base */
 html {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 body {
-  transition: colors 200ms;
+  transition: color 200ms, background-color 200ms;
 }
 
-/* Scrollbar Styles */
+/* Scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(250, 70%, 55%) transparent;
+  scrollbar-color: #6b9e8a transparent;
 }
 
 *::-webkit-scrollbar {
@@ -60,39 +76,49 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: hsl(250, 70%, 55%);
+  background-color: #6b9e8a;
   border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(250, 70%, 45%);
+  background-color: #5a8a78;
 }
 
-/* Glassmorphism */
+/* Auth layout */
+.auth-gradient {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(107, 158, 138, 0.12) 0%, transparent 70%),
+    linear-gradient(180deg, #151c24 0%, #0f1419 100%);
+}
+
+.auth-card {
+  @apply bg-surface rounded-2xl p-8 border border-border shadow-2xl;
+}
+
+/* Glass */
 .glass {
   @apply backdrop-blur-lg bg-surface-light/80 border border-white/20;
 }
 
 .glass-dark {
-  @apply backdrop-blur-lg bg-surface-dark/90 border border-white/10;
+  @apply backdrop-blur-lg bg-surface/90 border border-white/10;
 }
 
-/* Button Styles */
+/* Buttons */
 .btn {
   @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn-primary {
-  @apply bg-primary-500 text-white hover:bg-primary-600 active:scale-95;
+  @apply bg-primary text-on-primary hover:bg-primary-hover active:scale-95;
 }
 
 .btn-secondary {
-  @apply bg-surface-dark border border-white/20 text-text-dark hover:bg-surface-dark-hover;
+  @apply bg-surface-elevated border border-border text-text-primary hover:bg-surface-dark-hover;
 }
 
-/* Input Styles */
+/* Inputs */
 .input {
-  @apply w-full px-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500;
+  @apply w-full px-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50;
 }
 
 .input-light {
@@ -100,10 +126,10 @@ body {
 }
 
 .input-dark {
-  @apply bg-surface-dark border-white/20 text-text-dark placeholder:text-text-dark-secondary;
+  @apply bg-surface-elevated border-border text-text-body placeholder:text-text-secondary;
 }
 
-/* Card Styles */
+/* Cards */
 .card {
   @apply rounded-xl p-6 transition-all duration-200;
 }
@@ -113,16 +139,25 @@ body {
 }
 
 .card-dark {
-  @apply bg-surface-dark border border-white/10;
+  @apply bg-surface border border-border;
 }
 
-/* Message Bubble */
+/* Message bubbles */
 .message-sent {
-  @apply bg-primary-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[70%] ml-auto;
+  @apply bg-message-sent text-message-sent-text rounded-2xl rounded-tr-sm px-4 py-2 max-w-[70%] ml-auto;
 }
 
 .message-received {
-  @apply bg-surface-dark text-text-dark rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%];
+  @apply bg-surface-elevated text-text-primary rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%];
+}
+
+/* Chat list selection */
+.chat-item {
+  @apply flex items-center gap-3 px-3 py-3 cursor-pointer hover:bg-surface-elevated/60 transition-colors border-l-[3px] border-l-transparent;
+}
+
+.chat-item-selected {
+  @apply bg-surface-elevated/60 border-l-primary;
 }
 
 /* Animations */
@@ -135,7 +170,6 @@ body {
     opacity: 0;
     transform: translateY(10px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -150,22 +184,11 @@ body {
   from {
     transform: translateY(100%);
   }
-
   to {
     transform: translateY(0);
   }
 }
 
-/* Dark mode */
-.dark {
-  color-scheme: dark;
-}
-
-.dark body {
-  @apply bg-bg-dark text-text-dark;
-}
-
-/* New Animations */
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease-out;
 }
@@ -212,20 +235,45 @@ body {
 }
 
 .animate-shake {
-  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes shake {
-  10%, 90% {
+  10%,
+  90% {
     transform: translate3d(-1px, 0, 0);
   }
-  20%, 80% {
+  20%,
+  80% {
     transform: translate3d(2px, 0, 0);
   }
-  30%, 50%, 70% {
+  30%,
+  50%,
+  70% {
     transform: translate3d(-4px, 0, 0);
   }
-  40%, 60% {
+  40%,
+  60% {
     transform: translate3d(4px, 0, 0);
+  }
+}
+
+/* Dark mode */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  @apply bg-bg text-text-primary;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-fade-in-up,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-shake {
+    animation: none;
   }
 }

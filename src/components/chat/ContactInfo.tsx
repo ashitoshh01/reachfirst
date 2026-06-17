@@ -360,15 +360,15 @@ export default function ContactInfo({
   const isMixedGroup = hasStudent && hasTeacher;
 
   if (loading) {
-    return <div className="w-[350px] shrink-0 bg-[#111b21] border-l border-[#2a3942] p-4 flex justify-center pt-20 text-white">Loading...</div>;
+    return <div className="w-[350px] shrink-0 bg-surface border-l border-border p-4 flex justify-center pt-20 text-white">Loading...</div>;
   }
 
   if (!user && !group) return null;
 
   return (
-    <div className="w-[350px] shrink-0 bg-[#111b21] border-l border-[#2a3942] flex flex-col h-full animate-slide-in-right relative z-20">
+    <div className="w-[350px] shrink-0 bg-surface border-l border-border flex flex-col h-full animate-slide-in-right relative z-20">
       {/* Header */}
-      <div className="h-16 flex items-center px-4 border-b border-[#2a3942] bg-[#111b21] hover:bg-[#202c33] transition-colors">
+      <div className="h-16 flex items-center px-4 border-b border-border bg-surface hover:bg-surface-elevated transition-colors">
         <button onClick={onClose} className="mr-4 text-white hover:text-white">
           ✕
         </button>
@@ -379,12 +379,12 @@ export default function ContactInfo({
         {/* Profile / Group Section */}
         {group ? (
           <>
-            <div className="p-8 flex flex-col items-center border-b border-[#2a3942] bg-[#111b21]">
-              <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border border-[#2a3942] flex justify-center items-center bg-[#202c33]">
+            <div className="p-8 flex flex-col items-center border-b border-border bg-surface">
+              <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border border-border flex justify-center items-center bg-surface-elevated">
                 {group.avatar_url ? (
                   <img src={group.avatar_url} alt={group.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-[#00a884] flex items-center justify-center text-5xl font-semibold text-white">
+                  <div className="w-full h-full bg-primary flex items-center justify-center text-5xl font-semibold text-white">
                     {group.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -394,24 +394,24 @@ export default function ContactInfo({
               {/* Badges */}
               <div className="flex gap-2 mt-2 flex-wrap justify-center">
                 {!!group.is_teacher_group && (
-                  <span className="text-xs text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-400/20">
+                  <span className="text-xs text-accent-400 bg-accent/15 px-2 py-0.5 rounded-full border border-accent/20">
                     👨‍🏫 Teacher Group
                   </span>
                 )}
                 {!!group.is_class_group && (
-                  <span className="text-xs text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-400/20">
+                  <span className="text-xs text-primary bg-primary/15 px-2 py-0.5 rounded-full border border-primary/20">
                     🏫 Class Group
                   </span>
                 )}
                 {automationEnabled && !!group.is_teacher_group && (
-                  <span className="text-xs text-green-300 bg-green-500/15 px-2 py-0.5 rounded-full border border-green-400/20 animate-pulse">
+                  <span className="text-xs text-success bg-success/15 px-2 py-0.5 rounded-full border border-success/20 animate-pulse">
                     ⚡ Automation Active
                   </span>
                 )}
               </div>
             </div>
 
-            <div className="p-4 border-b border-[#2a3942] bg-[#111b21] mt-2">
+            <div className="p-4 border-b border-border bg-surface mt-2">
               <p className="text-sm text-white font-medium mb-2">Description</p>
               <p className="text-white text-sm whitespace-pre-wrap leading-relaxed">
                 {group.description || 'No description provided.'}
@@ -420,7 +420,7 @@ export default function ContactInfo({
 
             {/* ===== AUTOMATION SECTION (Teacher Groups Only) ===== */}
             {!!group.is_teacher_group && isCurrentUserAdmin && (
-              <div className="p-4 border-b border-[#2a3942] bg-[#111b21] mt-2">
+              <div className="p-4 border-b border-border bg-surface mt-2">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">🤖</span>
@@ -430,8 +430,8 @@ export default function ContactInfo({
                     onClick={handleToggleAutomation}
                     disabled={togglingAutomation}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 ${automationEnabled
-                      ? 'bg-[#00a884] shadow-[0_0_8px_rgba(0,168,132,0.4)]'
-                      : 'bg-[#3b4a54]'
+                      ? 'bg-primary shadow-[0_0_8px_rgba(107,158,138,0.4)]'
+                      : 'bg-toggle-off'
                       } ${togglingAutomation ? 'opacity-50' : ''}`}
                   >
                     <span
@@ -440,7 +440,7 @@ export default function ContactInfo({
                     />
                   </button>
                 </div>
-                <p className="text-xs text-[#8696a0] mb-3">
+                <p className="text-xs text-text-secondary mb-3">
                   {automationEnabled
                     ? "Messages matching keywords will be auto-forwarded to class groups."
                     : "Enable to auto-forward keyword-matched messages to class groups."}
@@ -450,7 +450,7 @@ export default function ContactInfo({
                 <div className="mt-2">
                   <button
                     onClick={() => setShowKeywords(!showKeywords)}
-                    className="w-full flex items-center justify-between text-xs text-[#00a884] hover:underline py-1"
+                    className="w-full flex items-center justify-between text-xs text-primary hover:underline py-1"
                   >
                     <span className="flex items-center gap-1">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" /></svg>
@@ -460,7 +460,7 @@ export default function ContactInfo({
                   </button>
 
                   {showKeywords && (
-                    <div className="mt-2 bg-[#202c33] rounded-lg p-3 space-y-2">
+                    <div className="mt-2 bg-surface-elevated rounded-lg p-3 space-y-2">
                       {/* Add Keyword Form */}
                       <form onSubmit={handleAddKeyword} className="flex gap-2">
                         <input
@@ -468,12 +468,12 @@ export default function ContactInfo({
                           value={newKeyword}
                           onChange={(e) => setNewKeyword(e.target.value)}
                           placeholder="Add a keyword..."
-                          className="flex-1 bg-transparent border-b border-[#00a884] text-white text-xs py-1 focus:outline-none placeholder-[#8696a0]"
+                          className="flex-1 bg-transparent border-b border-primary text-white text-xs py-1 focus:outline-none placeholder:text-text-secondary"
                         />
                         <button
                           type="submit"
                           disabled={addingKeyword || !newKeyword.trim()}
-                          className="text-xs bg-[#00a884] text-white px-2 py-1 rounded hover:bg-[#008f6f] disabled:opacity-50 transition-colors"
+                          className="text-xs bg-primary text-white px-2 py-1 rounded hover:bg-primary-hover disabled:opacity-50 transition-colors"
                         >
                           {addingKeyword ? "..." : "Add"}
                         </button>
@@ -485,14 +485,14 @@ export default function ContactInfo({
                           {keywords.map((kw) => (
                             <div
                               key={kw.id}
-                              className="flex items-center justify-between bg-[#111b21] rounded px-2 py-1.5 group"
+                              className="flex items-center justify-between bg-surface rounded px-2 py-1.5 group"
                             >
                               <span className="text-xs text-white truncate flex-1 mr-2">
                                 "{kw.keyword}"
                               </span>
                               <button
                                 onClick={() => handleDeleteKeyword(kw.id)}
-                                className="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
+                                className="text-error hover:text-error/80 opacity-0 group-hover:opacity-100 transition-opacity p-0.5"
                                 title="Delete keyword"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -501,7 +501,7 @@ export default function ContactInfo({
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-[#8696a0] text-center py-2">
+                        <p className="text-xs text-text-secondary text-center py-2">
                           No keywords configured. Add keywords to enable automation triggers.
                         </p>
                       )}
@@ -513,14 +513,14 @@ export default function ContactInfo({
 
             {/* ===== CLASS GROUP TOGGLE (Non-teacher groups, teacher role) ===== */}
             {!group.is_teacher_group && isCurrentUserAdmin && currentUser?.role === 'teacher' && (
-              <div className="p-4 border-b border-[#2a3942] bg-[#111b21] mt-2">
+              <div className="p-4 border-b border-border bg-surface mt-2">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-lg">🏫</span>
                       <p className="text-sm text-white font-medium">Class Group</p>
                     </div>
-                    <p className="text-xs text-[#8696a0] mt-1">
+                    <p className="text-xs text-text-secondary mt-1">
                       {group.is_class_group
                         ? "This is your class group. Automated messages will be forwarded here."
                         : "Mark as your class group to receive automated forwards."}
@@ -530,8 +530,8 @@ export default function ContactInfo({
                     onClick={handleSetClassGroup}
                     disabled={settingClassGroup}
                     className={`relative w-12 h-6 rounded-full transition-all duration-300 ${group.is_class_group
-                      ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
-                      : 'bg-[#3b4a54]'
+                      ? 'bg-primary shadow-[0_0_8px_rgba(107,158,138,0.4)]'
+                      : 'bg-toggle-off'
                       } ${settingClassGroup ? 'opacity-50' : ''}`}
                   >
                     <span
@@ -541,9 +541,9 @@ export default function ContactInfo({
                   </button>
                 </div>
                 {group.is_class_group && !members.some(m => !!m.is_cr && !!m.is_admin) && (
-                  <div className="mt-3 flex items-start gap-2 p-2 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <div className="mt-3 flex items-start gap-2 p-2 bg-warning/10 border border-warning/20 rounded-lg">
                     <span className="text-sm">⚠️</span>
-                    <p className="text-[10px] text-orange-300 leading-tight">
+                    <p className="text-[10px] text-warning leading-tight">
                       CR not selected, automation will forward the message to the group without a selection..!
                     </p>
                   </div>
@@ -552,11 +552,11 @@ export default function ContactInfo({
             )}
 
             {/* Members Section */}
-            <div className="p-4 border-b border-[#2a3942] bg-[#111b21] mt-2">
+            <div className="p-4 border-b border-border bg-surface mt-2">
               <div className="flex justify-between items-center mb-3">
                 <p className="text-sm text-white font-medium">{members.length} members</p>
                 {isCurrentUserAdmin && (
-                  <button onClick={() => { setShowAddMember(!showAddMember); setAddMemberError(""); }} className="text-xs text-[#00a884] hover:underline flex items-center gap-1">
+                  <button onClick={() => { setShowAddMember(!showAddMember); setAddMemberError(""); }} className="text-xs text-primary hover:underline flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                     Add Member
                   </button>
@@ -565,7 +565,7 @@ export default function ContactInfo({
 
               {showAddMember && (
                 <div className="mb-4 relative">
-                  <form onSubmit={handleAddMember} className="bg-[#202c33] p-3 rounded-lg">
+                  <form onSubmit={handleAddMember} className="bg-surface-elevated p-3 rounded-lg">
                     <input
                       type="text"
                       value={addMemberInput}
@@ -574,35 +574,35 @@ export default function ContactInfo({
                         setAddMemberError("");
                       }}
                       placeholder="Search to add member..."
-                      className="w-full bg-transparent border-b border-[#00a884] text-white text-sm py-1 mb-2 focus:outline-none placeholder-[#8696a0]"
+                      className="w-full bg-transparent border-b border-primary text-white text-sm py-1 mb-2 focus:outline-none placeholder:text-text-secondary"
                       autoFocus
                     />
-                    {addMemberError && <p className="text-red-400 text-xs mb-2">{addMemberError}</p>}
+                    {addMemberError && <p className="text-error text-xs mb-2">{addMemberError}</p>}
                     <div className="flex justify-end gap-2">
-                      <button type="button" onClick={() => { setShowAddMember(false); setSuggestions([]); setAddMemberInput(""); }} className="text-xs text-[#8696a0] hover:text-white px-2 py-1">Cancel</button>
-                      <button type="submit" disabled={addingMember || !addMemberInput.trim()} className="text-xs bg-[#00a884] text-white px-3 py-1 rounded hover:bg-[#008f6f] disabled:opacity-50">
+                      <button type="button" onClick={() => { setShowAddMember(false); setSuggestions([]); setAddMemberInput(""); }} className="text-xs text-text-secondary hover:text-white px-2 py-1">Cancel</button>
+                      <button type="submit" disabled={addingMember || !addMemberInput.trim()} className="text-xs bg-primary text-white px-3 py-1 rounded hover:bg-primary-hover disabled:opacity-50">
                         {addingMember ? "Adding..." : "Add"}
                       </button>
                     </div>
                   </form>
                   {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#202c33] border border-[#2a3942] rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto overflow-x-hidden">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-surface-elevated border border-border rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto overflow-x-hidden">
                       {suggestions.map((suggestion) => (
                         <div
                           key={suggestion.id}
-                          className="flex items-center gap-3 p-2 hover:bg-[#2a3942] cursor-pointer transition-colors w-full"
+                          className="flex items-center gap-3 p-2 hover:bg-border cursor-pointer transition-colors w-full"
                           onClick={() => handleSelectSuggestion(suggestion)}
                         >
                           {suggestion.avatar_url ? (
                             <img src={suggestion.avatar_url} alt={suggestion.name} className="w-8 h-8 rounded-full shrink-0 object-cover" />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-[#6a7175] flex items-center shrink-0 justify-center text-white text-xs font-medium">
+                            <div className="w-8 h-8 rounded-full bg-avatar flex items-center shrink-0 justify-center text-white text-xs font-medium">
                               {suggestion.name.charAt(0).toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0 flex-1 w-full overflow-hidden">
                             <p className="text-sm text-white font-medium truncate">{suggestion.name}</p>
-                            <p className="text-xs text-[#8696a0] truncate">{suggestion.email}</p>
+                            <p className="text-xs text-text-secondary truncate">{suggestion.email}</p>
                           </div>
                         </div>
                       ))}
@@ -617,7 +617,7 @@ export default function ContactInfo({
                     {member.avatar_url ? (
                       <img src={member.avatar_url} alt={member.name} className="w-10 h-10 rounded-full object-cover" />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#6a7175] flex items-center shrink-0 justify-center text-white font-medium">
+                      <div className="w-10 h-10 rounded-full bg-avatar flex items-center shrink-0 justify-center text-white font-medium">
                         {member.name.charAt(0).toUpperCase()}
                       </div>
                     )}
@@ -627,7 +627,7 @@ export default function ContactInfo({
                           {member.id === currentUser?.id ? "You" : member.name}
                         </p>
                         {member.is_admin ? (
-                          <span className="text-xs text-[#00a884] bg-[#00a884]/10 px-2 py-0.5 rounded border border-[#00a884]/20 ml-2 whitespace-nowrap">
+                          <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 ml-2 whitespace-nowrap">
                             {member.role === 'student' && isMixedGroup && member.is_cr ? 'CR' : 'Group Admin'}
                           </span>
                         ) : null}
@@ -641,7 +641,7 @@ export default function ContactInfo({
                         {member.is_admin ? (
                           <button
                             onClick={() => handleRemoveAdmin(member.id)}
-                            className="text-xs px-2 py-1 text-white bg-orange-500/20 hover:bg-orange-500/40 rounded transition-colors whitespace-nowrap"
+                            className="text-xs px-2 py-1 text-white bg-warning/20 hover:bg-warning/40 rounded transition-colors whitespace-nowrap"
                             title={member.role === 'student' && isMixedGroup ? "Remove CR" : "Remove Admin"}
                           >
                             {member.role === 'student' && isMixedGroup ? "Remove CR" : "Remove Admin"}
@@ -650,7 +650,7 @@ export default function ContactInfo({
                           <>
                             <button
                               onClick={() => handleMakeAdmin(member.id)}
-                              className="text-xs px-2 py-1 text-white bg-blue-500/20 hover:bg-blue-500/40 rounded transition-colors whitespace-nowrap"
+                              className="text-xs px-2 py-1 text-white bg-accent/20 hover:bg-accent/40 rounded transition-colors whitespace-nowrap"
                               title="Make Admin"
                             >
                               Make Admin
@@ -658,7 +658,7 @@ export default function ContactInfo({
                             {member.role === 'student' && isMixedGroup && currentUser?.role === 'teacher' && (
                               <button
                                 onClick={() => handleMakeCR(member.id)}
-                                className="text-xs px-2 py-1 text-white bg-green-500/20 hover:bg-green-500/40 rounded transition-colors whitespace-nowrap"
+                                className="text-xs px-2 py-1 text-white bg-success/20 hover:bg-success/40 rounded transition-colors whitespace-nowrap"
                                 title="Make CR"
                               >
                                 Make CR
@@ -668,7 +668,7 @@ export default function ContactInfo({
                         )}
                         <button
                           onClick={() => setMemberToRemove(member)}
-                          className="text-xs px-2 py-1 text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded transition-colors"
+                          className="text-xs px-2 py-1 text-error bg-error/10 hover:bg-error/20 rounded transition-colors"
                           title="Remove Member"
                         >
                           Remove
@@ -685,12 +685,12 @@ export default function ContactInfo({
           </>
         ) : (
           <>
-            <div className="p-8 flex flex-col items-center border-b border-[#2a3942] bg-[#111b21]">
-              <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border border-[#2a3942] bg-[#202c33] flex items-center justify-center">
+            <div className="p-8 flex flex-col items-center border-b border-border bg-surface">
+              <div className="w-40 h-40 rounded-full overflow-hidden mb-4 border border-border bg-surface-elevated flex items-center justify-center">
                 {user?.avatar_url ? (
                   <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-[#00a884] flex items-center justify-center text-5xl font-semibold text-white">
+                  <div className="w-full h-full bg-primary flex items-center justify-center text-5xl font-semibold text-white">
                     {user?.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -699,7 +699,7 @@ export default function ContactInfo({
               <p className="text-white text-sm">{user?.email}</p>
             </div>
 
-            <div className="p-4 border-b border-[#2a3942] bg-[#111b21] mt-2">
+            <div className="p-4 border-b border-border bg-surface mt-2">
               <p className="text-sm text-white font-medium mb-1">About</p>
               <p className="text-white text-base py-2">
                 {user?.bio || 'Available'}
@@ -709,7 +709,7 @@ export default function ContactInfo({
         )}
 
         {/* Media Placeholder */}
-        <div className="p-4 bg-[#111b21] mt-2">
+        <div className="p-4 bg-surface mt-2">
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm text-white font-medium">
               Media, links and docs
@@ -722,7 +722,7 @@ export default function ContactInfo({
             {media.map((item) => (
               <div
                 key={item.id}
-                className="aspect-square bg-[#202c33] rounded-lg overflow-hidden border border-white/5 cursor-pointer relative group hover:opacity-80 transition-opacity"
+                className="aspect-square bg-surface-elevated rounded-lg overflow-hidden border border-white/5 cursor-pointer relative group hover:opacity-80 transition-opacity"
                 onClick={() => window.open(item.content, "_blank")}
               >
                 {item.message_type === "image" ? (
