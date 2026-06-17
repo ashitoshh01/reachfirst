@@ -68,6 +68,26 @@ class AutomationService {
         return years.size > 0 ? [...years] : null;
     }
 
+    /**
+     * Extract target branches from message content.
+     * Looks for CSE, ECE, Mtech mentions.
+     * Returns array of matched branches or null (meaning target ALL branches).
+     */
+    extractTargetBranches(messageContent) {
+        const branchRegex = /\b(CSE|ECE|M\.?\s*Tech|Mtech)\b/gi;
+        const matches = [...messageContent.matchAll(branchRegex)];
+        if (matches.length === 0) return null;
+
+        const branches = new Set();
+        for (const m of matches) {
+            const raw = m[1].replace(/[.\s]/g, '').toLowerCase();
+            if (raw === 'cse') branches.add('CSE');
+            else if (raw === 'ece') branches.add('ECE');
+            else if (raw === 'mtech') branches.add('Mtech');
+        }
+        return branches.size > 0 ? [...branches] : null;
+    }
+
     async getSenderClassGroups(senderId) {
         return Group.getClassGroupsByTeacher(senderId);
     }
@@ -103,13 +123,20 @@ class AutomationService {
                 return { automated: false };
             }
 
-            const targetDivisions = this.extractTargetDivisions(messageContent) || [String(sender.division).toUpperCase()];
-            const targetYears = this.extractTargetYears(messageContent) || [Number(sender.college_year)];
+            const ALL_DIVISIONS = ['A', 'B', 'C', 'D', 'E', 'F'];
+            const targetDivisions = this.extractTargetDivisions(messageContent) || ALL_DIVISIONS;
+            const ALL_YEARS = [1, 2, 3, 4];
+            const targetYears = this.extractTargetYears(messageContent) || ALL_YEARS;
+            // If no branch mentioned, target ALL branches
+            const ALL_BRANCHES = ['CSE', 'ECE', 'Mtech'];
+            const targetBranches = this.extractTargetBranches(messageContent) || ALL_BRANCHES;
 
             const targets = [];
             for (const div of targetDivisions) {
                 for (const year of targetYears) {
-                    targets.push({ division: div, year: year });
+                    for (const branch of targetBranches) {
+                        targets.push({ division: div, year: year, branch: branch });
+                    }
                 }
             }
 
@@ -121,22 +148,23 @@ class AutomationService {
                 let effectiveTeacher = sender;
 
                 if (target.division !== String(sender.division).toUpperCase() ||
-                    target.year !== Number(sender.college_year)) {
+                    target.year !== Number(sender.college_year) ||
+                    target.branch !== String(sender.branch || '')) {
                     
                     const [targetTeachers] = await db.execute(
-                        'SELECT * FROM users WHERE role = "teacher" AND division = ? AND college_year = ? LIMIT 1',
-                        [target.division, target.year]
+                        'SELECT * FROM users WHERE role = "teacher" AND division = ? AND college_year = ? AND branch = ? LIMIT 1',
+                        [target.division, target.year, target.branch]
                     );
 
                     if (targetTeachers.length === 0) {
-                        console.log(`[Automation] No target teacher found for Div ${target.division} Year ${target.year}`);
+                        console.log(`[Automation] No target teacher found for Div ${target.division} ${target.branch} Year ${target.year}`);
                         continue;
                     }
                     effectiveTeacher = targetTeachers[0];
                 }
 
                 console.log(
-                    `[Automation] Keyword "${matchedKeyword}" matched. Using teacher ${effectiveTeacher.name} (${effectiveTeacher.division}, Year ${effectiveTeacher.college_year}) in group ${groupId}`
+                    `[Automation] Keyword "${matchedKeyword}" matched. Using teacher ${effectiveTeacher.name} (${effectiveTeacher.division}, ${effectiveTeacher.branch || 'N/A'}, Year ${effectiveTeacher.college_year}) in group ${groupId}`
                 );
 
                 // 4. Find all class groups owned by the effective teacher
@@ -159,7 +187,7 @@ class AutomationService {
                                 const alreadyForwarded = await Automation.hasBeenForwarded(messageId, `chat_${chat.id}`);
                                 if (alreadyForwarded) continue;
 
-                                const forwardedContent = `📢 [Div ${effectiveTeacher.division} • ${effectiveTeacher.college_year} Year | Auto-forwarded from ${group.name} by ${sender.name}]\n\n${messageContent}`;
+                                const forwardedContent = `📢 [Div ${effectiveTeacher.division} • ${effectiveTeacher.branch || 'N/A'} • ${effectiveTeacher.college_year} Year | Auto-forwarded from ${group.name} by ${sender.name}]\n\n${messageContent}`;
                                 const fwdMessageId = await Message.create({
                                     sender_id: effectiveTeacher.id,
                                     chat_id: chat.id,
@@ -194,7 +222,7 @@ class AutomationService {
                                 continue;
                             }
 
-                            const forwardedContent = `📢 [Div ${effectiveTeacher.division} • ${effectiveTeacher.college_year} Year | Auto-forwarded from ${group.name} by ${sender.name}]\n\n${messageContent}`;
+                            const forwardedContent = `📢 [Div ${effectiveTeacher.division} • ${effectiveTeacher.branch || 'N/A'} • ${effectiveTeacher.college_year} Year | Auto-forwarded from ${group.name} by ${sender.name}]\n\n${messageContent}`;
                             const fwdMessageId = await Message.create({
                                 sender_id: effectiveTeacher.id,
                                 group_id: classGroup.id,
