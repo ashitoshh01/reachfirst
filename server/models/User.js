@@ -2,10 +2,10 @@ const db = require('../config/database');
 
 const User = {
     async create(userData) {
-        const { email, password_hash, name, role, division, college_year } = userData;
+        const { email, password_hash, name, role, branch, division, college_year } = userData;
         const [result] = await db.execute(
-            'INSERT INTO users (email, password_hash, name, role, division, college_year) VALUES (?, ?, ?, ?, ?, ?)',
-            [email, password_hash, name, role, division, college_year]
+            'INSERT INTO users (email, password_hash, name, role, branch, division, college_year) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [email, password_hash, name, role, branch, division, college_year]
         );
         return result.insertId;
     },
@@ -16,7 +16,7 @@ const User = {
     },
 
     async findById(id) {
-        const [rows] = await db.execute('SELECT id, email, name, role, division, college_year, is_cr, avatar_url, bio, is_online, last_seen, created_at FROM users WHERE id = ?', [id]);
+        const [rows] = await db.execute('SELECT id, email, name, role, branch, division, college_year, is_cr, avatar_url, bio, is_online, last_seen, created_at FROM users WHERE id = ?', [id]);
         return rows[0];
     },
 
@@ -43,7 +43,7 @@ const User = {
 
     async findByRole(role) {
         const [rows] = await db.execute(
-            'SELECT id, email, name, role, division, college_year, is_cr, avatar_url, bio, is_online, last_seen FROM users WHERE role = ?',
+            'SELECT id, email, name, role, branch, division, college_year, is_cr, avatar_url, bio, is_online, last_seen FROM users WHERE role = ?',
             [role]
         );
         return rows;
@@ -60,7 +60,7 @@ const User = {
         const queryStr = String(query).trim();
         const safeLimit = parseInt(limit, 10) || 50;
         const [rows] = await db.execute(
-            `SELECT id, email, name, role, division, college_year, avatar_url, is_online 
+            `SELECT id, email, name, role, branch, division, college_year, avatar_url, is_online 
              FROM users 
              WHERE (email LIKE ? OR name LIKE ?) 
              ORDER BY name ASC 

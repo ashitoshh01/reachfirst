@@ -9,6 +9,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     role ENUM('student','teacher','admin') NOT NULL,
+    branch VARCHAR(50),
     division VARCHAR(50) NOT NULL,
     college_year TINYINT NOT NULL,
     is_cr BOOLEAN DEFAULT FALSE,

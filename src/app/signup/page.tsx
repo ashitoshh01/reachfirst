@@ -8,6 +8,7 @@ import Link from 'next/link';
 export default function SignupPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [branch, setBranch] = useState('');
     const [division, setDivision] = useState('');
     const [collegeYear, setCollegeYear] = useState('1');
     const [password, setPassword] = useState('');
@@ -34,7 +35,7 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            await register(email, password, name, division, Number(collegeYear), confirmPassword);
+            await register(email, password, name, branch, division, Number(collegeYear), confirmPassword);
             router.push('/chat');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Registration failed');
@@ -86,6 +87,20 @@ export default function SignupPage() {
                         <p className="mt-1 text-xs text-text-muted">
                             Teachers: teachername@despu.edu.in · Students: studentrollno@despu.edu.in
                         </p>
+                    </div>
+
+                    <div>
+                        <select
+                            value={branch}
+                            onChange={(e) => setBranch(e.target.value)}
+                            className="input input-dark"
+                            required
+                        >
+                            <option value="" disabled hidden>Select Branch</option>
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="Mtech">Mtech</option>
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

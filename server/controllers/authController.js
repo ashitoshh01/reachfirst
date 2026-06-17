@@ -5,9 +5,9 @@ const User = require('../models/User');
 const authController = {
     async register(req, res) {
         try {
-            const { email, password, confirm_password, name, division, college_year } = req.body;
+            const { email, password, confirm_password, name, branch, division, college_year } = req.body;
 
-            if (!email || !password || !name || !division || college_year === undefined || college_year === null) {
+            if (!email || !password || !name || !branch || !division || college_year === undefined || college_year === null) {
                 return res.status(400).json({ error: 'All fields are required' });
             }
 
@@ -30,8 +30,13 @@ const authController = {
                 return res.status(400).json({ error: 'Invalid email format for role assignment' });
             }
 
+            const normalizedBranch = String(branch).trim();
             const normalizedDivision = String(division).trim().toUpperCase();
             const normalizedYear = Number.parseInt(college_year, 10);
+
+            if (!normalizedBranch) {
+                return res.status(400).json({ error: 'Branch is required' });
+            }
 
             if (!normalizedDivision) {
                 return res.status(400).json({ error: 'Division is required' });
@@ -61,6 +66,7 @@ const authController = {
                 password_hash,
                 name,
                 role,
+                branch: normalizedBranch,
                 division: normalizedDivision,
                 college_year: normalizedYear
             });
@@ -79,6 +85,7 @@ const authController = {
                     email,
                     name,
                     role,
+                    branch: normalizedBranch,
                     division: normalizedDivision,
                     college_year: normalizedYear
                 }
@@ -127,6 +134,7 @@ const authController = {
                     email: user.email,
                     name: user.name,
                     role: user.role,
+                    branch: user.branch,
                     division: user.division,
                     college_year: user.college_year,
                     is_cr: user.is_cr,

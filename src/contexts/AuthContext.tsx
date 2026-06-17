@@ -9,6 +9,7 @@ interface User {
     email: string;
     name: string;
     role: 'student' | 'teacher' | 'admin';
+    branch: string;
     division: string;
     college_year: number;
     is_cr: boolean;
@@ -24,6 +25,7 @@ interface AuthContextType {
         email: string,
         password: string,
         name: string,
+        branch: string,
         division: string,
         collegeYear: number,
         confirmPassword: string
@@ -72,6 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: string,
         password: string,
         name: string,
+        branch: string,
         division: string,
         collegeYear: number,
         confirmPassword: string
@@ -81,6 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             password,
             confirm_password: confirmPassword,
             name,
+            branch,
             division,
             college_year: collegeYear
         });
