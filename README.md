@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 📱 ReachFirst: Smart Teacher-Student Communication Portal
 
 ReachFirst is a purpose-built real-time messaging platform designed for educational institutions. It provides a seamless communication experience with a powerful **AI-driven automation layer** that helps teachers effortlessly manage cross-group announcements, saving them time and reducing administrative stress.
