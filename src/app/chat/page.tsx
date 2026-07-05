@@ -44,7 +44,7 @@ export default function ChatPage() {
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
     // Sidebar View State
-    const [sidebarView, setSidebarView] = useState<'chats' | 'profile'>('chats');
+    const [sidebarView, setSidebarView] = useState<'chats' | 'profile' | 'settings'>('chats');
 
     // Add Contact Modal States
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -94,7 +94,7 @@ export default function ChatPage() {
             if (e.key === 'Escape') {
                 if (isContactModalOpen) setIsContactModalOpen(false);
                 if (showContactInfo) setShowContactInfo(false);
-                if (sidebarView === 'profile') setSidebarView('chats');
+                if (sidebarView === 'profile' || sidebarView === 'settings') setSidebarView('chats');
             }
         };
 
@@ -324,7 +324,78 @@ export default function ChatPage() {
                                 setInviteMode(false);
                                 setIsContactModalOpen(true);
                             }}
+                            onSettingsClick={() => setSidebarView('settings')}
                         />
+                    ) : sidebarView === 'settings' ? (
+                        <div className="flex-1 flex flex-col animate-slide-in-left bg-surface min-h-0">
+                            <div className="h-[108px] bg-surface-elevated px-6 flex items-end pb-4 gap-4 text-text-primary shrink-0">
+                                <button onClick={() => setSidebarView('chats')} className="mb-1 p-2 -ml-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors font-medium">
+                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                                    </svg>
+                                </button>
+                                <span className="text-[19px] font-medium mb-1">Settings</span>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-6 pb-12 space-y-8 bg-surface custom-scrollbar min-h-0">
+                                <div className="space-y-6">
+                                    {/* Theme Settings */}
+                                    <div className="space-y-3">
+                                        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Theme</h3>
+                                        <div className="flex flex-col gap-2">
+                                            <button 
+                                                onClick={() => {
+                                                    document.documentElement.classList.remove('dark');
+                                                    localStorage.setItem('theme', 'light');
+                                                }}
+                                                className="w-full text-left px-4 py-3 rounded-lg bg-surface-elevated hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-text-body font-medium"
+                                            >
+                                                Light Mode
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    document.documentElement.classList.add('dark');
+                                                    localStorage.setItem('theme', 'dark');
+                                                }}
+                                                className="w-full text-left px-4 py-3 rounded-lg bg-surface-elevated hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-text-body font-medium"
+                                            >
+                                                Dark Mode
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Account Center */}
+                                    <div className="space-y-3">
+                                        <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Account Center</h3>
+                                        <div className="flex flex-col gap-2">
+                                            <button 
+                                                onClick={() => alert('Password reset functionality to be implemented.')}
+                                                className="w-full text-left px-4 py-3 rounded-lg bg-surface-elevated hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-text-body font-medium"
+                                            >
+                                                Change Password
+                                            </button>
+                                            <button 
+                                                onClick={() => setIsDeleteModalOpen(true)}
+                                                className="w-full text-left px-4 py-3 rounded-lg bg-error/10 text-error hover:bg-error/20 transition-colors font-medium"
+                                            >
+                                                Delete Account
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Sign Out */}
+                                    <div className="pt-4 border-t border-border">
+                                        <button
+                                            type="button"
+                                            onClick={logout}
+                                            className="w-full flex items-center justify-center gap-2 bg-surface-elevated text-text-primary hover:bg-black/5 dark:hover:bg-white/5 py-3 rounded-lg font-medium transition-colors"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     ) : (
                         // Profile Sidebar (WhatsApp Style)
                         <div className="flex-1 flex flex-col animate-slide-in-left bg-surface min-h-0">

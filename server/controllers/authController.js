@@ -22,9 +22,9 @@ const authController = {
             const localPart = email.split('@')[0];
             let role = null;
 
-            if (/^[0-9A-Za-z.-]+$/.test(localPart) && /\d/.test(localPart)) {
+            if (/^\d+$/.test(localPart)) {
                 role = 'student';
-            } else if (/^[A-Za-z.-]+$/.test(localPart)) {
+            } else if (/^[A-Za-z0-9.-]+$/.test(localPart)) {
                 role = 'teacher';
             } else {
                 return res.status(400).json({ error: 'Invalid email format for role assignment' });

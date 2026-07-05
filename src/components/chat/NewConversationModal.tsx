@@ -189,7 +189,10 @@ export default function NewConversationModal({
     try {
       const res = await api.get(`/api/users/search?query=${encodeURIComponent(query)}&role=teacher`);
       if (res.data.users) {
-        setTeacherResults(res.data.users);
+        const filtered = res.data.users.filter((u: User) => 
+          u.id !== currentUserId && !selectedTeachers.find(t => t.id === u.id)
+        );
+        setTeacherResults(filtered);
       }
     } catch {
       setTeacherResults([]);
@@ -343,7 +346,7 @@ export default function NewConversationModal({
                 {groupResults.length > 0 && (
                   <div className="mt-2 bg-surface rounded-lg p-2 max-h-32 overflow-y-auto">
                     {groupResults.map(user => (
-                      <div key={user.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded cursor-pointer" onClick={() => { setSelectedGroupUsers([...selectedGroupUsers, user]); setGroupSearch(''); setGroupResults([]); }}>
+                      <div key={user.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded cursor-pointer" onClick={() => { if (!selectedGroupUsers.find(su => su.id === user.id)) setSelectedGroupUsers([...selectedGroupUsers, user]); setGroupResults(groupResults.filter(u => u.id !== user.id)); }}>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-xs">
                             {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full rounded-full object-cover" /> : user.name.charAt(0)}
@@ -426,7 +429,7 @@ export default function NewConversationModal({
                 {teacherResults.length > 0 && (
                   <div className="mt-2 bg-surface rounded-lg p-2 max-h-32 overflow-y-auto">
                     {teacherResults.map(user => (
-                      <div key={user.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded cursor-pointer" onClick={() => { setSelectedTeachers([...selectedTeachers, user]); setTeacherSearch(''); setTeacherResults([]); }}>
+                      <div key={user.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded cursor-pointer" onClick={() => { if (!selectedTeachers.find(t => t.id === user.id)) setSelectedTeachers([...selectedTeachers, user]); setTeacherResults(teacherResults.filter(t => t.id !== user.id)); }}>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-xs">{user.name.charAt(0)}</div>
                           <span className="text-sm">{user.name}</span>
