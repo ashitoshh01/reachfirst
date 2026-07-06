@@ -9,8 +9,8 @@ router.post('/', authMiddleware, upload.single('image'), (req, res) => {
             return res.status(400).json({ error: 'Please upload a file' });
         }
 
-        // Construct public URL
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        // For Cloudinary, the URL is provided in req.file.path
+        const fileUrl = req.file.path;
 
         res.json({
             message: 'File uploaded successfully',

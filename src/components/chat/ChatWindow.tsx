@@ -23,6 +23,7 @@ interface ChatWindowProps {
     headerName?: string;
     headerAvatar?: string;
     isOnline?: boolean;
+    onBack?: () => void;
 }
 
 export default function ChatWindow({
@@ -32,7 +33,8 @@ export default function ChatWindow({
     onToggleContactInfo,
     headerName,
     headerAvatar,
-    isOnline
+    isOnline,
+    onBack
 }: ChatWindowProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -280,10 +282,22 @@ export default function ChatWindow({
         <div className="h-full flex flex-col relative">
             {/* Header */}
             <div className="h-16 border-b border-border bg-surface px-6 flex items-center justify-between z-10 shrink-0">
-                <button
-                    onClick={() => onToggleContactInfo && onToggleContactInfo()}
-                    className="flex items-center gap-4 group cursor-pointer rounded-lg hover:bg-surface-elevated/50 px-2 py-1 -ml-2 transition-colors"
-                >
+                <div className="flex items-center gap-1">
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="md:hidden p-2 -ml-4 mr-1 text-text-secondary hover:text-text-primary rounded-full hover:bg-surface-elevated transition-colors"
+                            aria-label="Back to chats"
+                        >
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+                            </svg>
+                        </button>
+                    )}
+                    <button
+                        onClick={() => onToggleContactInfo && onToggleContactInfo()}
+                        className="flex items-center gap-4 group cursor-pointer rounded-lg hover:bg-surface-elevated/50 px-2 py-1 transition-colors"
+                    >
                     <div className="relative">
                         {headerAvatar ? (
                             <img src={headerAvatar} alt={headerName} className="w-10 h-10 rounded-full object-cover" />
@@ -300,7 +314,8 @@ export default function ChatWindow({
                         <h3 className="text-text-primary font-medium text-lg leading-tight">{headerName}</h3>
                         {isOnline && <span className="text-xs text-success">Online</span>}
                     </div>
-                </button>
+                    </button>
+                </div>
             </div>
 
             {/* Messages Area */}

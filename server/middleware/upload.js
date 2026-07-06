@@ -1,14 +1,18 @@
 const multer = require('multer');
-const path = require('path');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config();
 
-// Configure storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+// Cloudinary automatically picks up the CLOUDINARY_URL from your .env file
+cloudinary.config(true); // true tells it to pull from env
+
+// Configure Cloudinary storage
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'reachfirst_uploads', // You can change this folder name if you want
+        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp4', 'docx', 'doc'], 
+        // If you need more formats, add them above
     }
 });
 

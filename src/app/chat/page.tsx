@@ -288,7 +288,7 @@ export default function ChatPage() {
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden relative">
                 {/* Sidebar - Swappable Views */}
-                <div className="w-80 min-w-[320px] bg-surface border-r border-border flex flex-col z-20">
+                <div className={`w-full md:w-80 md:min-w-[320px] bg-surface border-r border-border flex-col z-20 ${(selectedChat || selectedGroup) ? 'hidden md:flex' : 'flex'}`}>
                     {sidebarView === 'chats' ? (
                         <ChatList
                             chats={chats}
@@ -523,7 +523,7 @@ export default function ChatPage() {
                 </div>
 
                 {/* Chat Window & Contact Info */}
-                <div className="flex-1 bg-bg flex flex-row overflow-hidden relative">
+                <div className={`flex-1 bg-bg flex-row overflow-hidden relative ${(selectedChat || selectedGroup) ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex-1 flex flex-col h-full min-w-0 bg-[url('/chat-bg-dark.png')] bg-repeat bg-[length:400px] relative">
                         <div className="absolute inset-0 bg-bg/90 pointer-events-none"></div>
                         <div className="relative z-10 h-full flex flex-col">
@@ -535,6 +535,7 @@ export default function ChatPage() {
                                     headerAvatar={activeChat.other_user_avatar}
                                     isOnline={!!activeChat.other_user_online}
                                     onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
+                                    onBack={() => { setSelectedChat(null); setSelectedGroup(null); }}
                                 />
                             ) : selectedGroup && activeGroup ? (
                                 <ChatWindow
@@ -543,6 +544,7 @@ export default function ChatPage() {
                                     headerName={activeGroup.name}
                                     headerAvatar={activeGroup.avatar_url}
                                     onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
+                                    onBack={() => { setSelectedChat(null); setSelectedGroup(null); }}
                                 />
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-text-secondary">
