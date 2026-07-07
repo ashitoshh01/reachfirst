@@ -13,6 +13,9 @@ interface Message {
     message_type: string;
     is_automated: boolean;
     created_at: string;
+    file_name?: string;
+    file_mime_type?: string;
+    file_size?: number;
 }
 
 interface ChatWindowProps {
@@ -49,6 +52,63 @@ export default function ChatWindow({
     const { socket } = useSocket();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Helpers
+    const formatFileSize = (bytes?: number) => {
+        if (!bytes) return '';
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const getFileIcon = (mimeType?: string, fileName?: string) => {
+        const type = mimeType || '';
+        const name = (fileName || '').toLowerCase();
+        
+        if (type.includes('pdf') || name.endsWith('.pdf')) {
+            return (
+                <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            );
+        }
+        if (type.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) {
+            return (
+                <svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2z"/></svg>
+            );
+        }
+        if (type.includes('powerpoint') || type.includes('presentation') || name.endsWith('.ppt') || name.endsWith('.pptx')) {
+            return (
+                <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            );
+        }
+        if (type.includes('zip') || type.includes('compressed') || name.endsWith('.zip') || name.endsWith('.rar')) {
+             return (
+                 <svg className="w-8 h-8 text-yellow-600" fill="currentColor" viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z"/></svg>
+             );
+        }
+        return (
+            <svg className="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6z"/></svg>
+        );
+    };
+
+    const downloadAttachment = async (url: string, filename?: string) => {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename || 'downloaded_file';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download failed, opening in new tab instead', error);
+            window.open(url, '_blank');
+        }
+    };
 
     useEffect(() => {
         if (chatId || groupId) {
@@ -221,6 +281,7 @@ export default function ChatWindow({
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             const url = uploadRes.data.url;
+            const metadata = uploadRes.data.metadata;
 
             let messageType = 'file';
             if (previewFile.type.startsWith('image/')) messageType = 'image';
@@ -234,7 +295,8 @@ export default function ChatWindow({
 
             const res = await api.post(endpoint, {
                 content: content,
-                message_type: messageType
+                message_type: messageType,
+                metadata: metadata
             });
 
             const message = res.data.message;
@@ -344,14 +406,44 @@ export default function ChatWindow({
                                     )}
 
                                     {msg.message_type === 'image' ? (
-                                        <img src={msg.content} alt="Shared image" className="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(msg.content, '_blank')} />
+                                        <>
+                                            <img src={msg.content.split('\n\n')[0]} alt="Shared image" className="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(msg.content.split('\n\n')[0], '_blank')} />
+                                            {msg.content.split('\n\n')[1] && <p className="mt-2 text-sm">{msg.content.split('\n\n').slice(1).join('\n\n')}</p>}
+                                        </>
                                     ) : msg.message_type === 'video' ? (
-                                        <video src={msg.content} controls className="max-w-[240px] rounded-lg" />
+                                        <>
+                                            <video src={msg.content.split('\n\n')[0]} controls className="max-w-[240px] rounded-lg" />
+                                            {msg.content.split('\n\n')[1] && <p className="mt-2 text-sm">{msg.content.split('\n\n').slice(1).join('\n\n')}</p>}
+                                        </>
                                     ) : msg.message_type === 'file' ? (
-                                        <a href={msg.content} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/20 rounded-lg hover:bg-black/30 transition-colors">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                                            <span className="underline truncate max-w-[150px]">Download File</span>
-                                        </a>
+                                        <div className="flex flex-col gap-2 min-w-[200px] max-w-[260px]">
+                                            <div className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg shadow-sm cursor-pointer hover:bg-surface-elevated transition-colors" onClick={() => downloadAttachment(msg.content.split('\n\n')[0], msg.file_name)}>
+                                                <div className="shrink-0">
+                                                    {getFileIcon(msg.file_mime_type, msg.file_name)}
+                                                </div>
+                                                <div className="flex flex-col overflow-hidden w-full">
+                                                    <span className="font-medium text-sm text-text-primary truncate" title={msg.file_name || 'Attachment'}>
+                                                        {msg.file_name || 'Attachment'}
+                                                    </span>
+                                                    <div className="flex items-center justify-between mt-1">
+                                                        <span className="text-xs text-text-secondary truncate pr-2">
+                                                            {formatFileSize(msg.file_size)}
+                                                        </span>
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                downloadAttachment(msg.content.split('\n\n')[0], msg.file_name);
+                                                            }}
+                                                            className="text-primary hover:text-primary-hover focus:outline-none"
+                                                            title="Download"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {msg.content.split('\n\n')[1] && <p className="text-sm px-1">{msg.content.split('\n\n').slice(1).join('\n\n')}</p>}
+                                        </div>
                                     ) : (
                                         <p className="break-words whitespace-pre-wrap">{msg.content}</p>
                                     )}

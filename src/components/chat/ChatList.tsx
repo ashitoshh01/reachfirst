@@ -9,6 +9,8 @@ interface Chat {
     other_user_avatar?: string;
     other_user_online: boolean;
     last_message?: string;
+    last_message_type?: string;
+    last_message_file_name?: string;
     last_message_time?: string;
 }
 
@@ -18,6 +20,8 @@ interface Group {
     description?: string;
     avatar_url?: string;
     last_message?: string;
+    last_message_type?: string;
+    last_message_file_name?: string;
     last_message_time?: string;
 }
 
@@ -56,6 +60,16 @@ export default function ChatList({
         if (!timeStr) return '';
         const date = new Date(timeStr);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const renderLastMessage = (content?: string, type?: string, fileName?: string) => {
+        if (!content) return null;
+        if (type === 'image') return '🖼 Photo';
+        if (type === 'video') return '🎥 Video';
+        if (type === 'file') return `📄 ${fileName || 'Attachment'}`;
+        
+        // For text messages, return up to 50 chars of content (stripping caption split logic if needed, but caption isn't used for normal text)
+        return content;
     };
 
     const filteredChats = chats.filter(chat =>
@@ -177,7 +191,7 @@ export default function ChatList({
                                     </div>
                                     <div className="flex justify-between items-center mr-4">
                                         <p className={`text-sm truncate flex-1 mr-2 ${unreadCounts['group_' + group.id] ? 'text-text-body' : 'text-text-secondary'}`}>
-                                            {group.last_message || 'Multi-device group'}
+                                            {renderLastMessage(group.last_message, group.last_message_type, group.last_message_file_name) || 'Multi-device group'}
                                         </p>
                                         {unreadCounts['group_' + group.id] > 0 && (
                                             <span className="bg-primary text-on-primary text-[11px] font-bold px-[6px] py-[2px] rounded-full min-w-[20px] text-center">
@@ -228,7 +242,7 @@ export default function ChatList({
                                     </div>
                                     <div className="flex justify-between items-center mr-4">
                                         <p className={`text-sm truncate flex-1 mr-2 ${unreadCounts['chat_' + chat.id] ? 'text-text-body' : 'text-text-secondary'}`}>
-                                            {chat.last_message || 'Start chatting'}
+                                            {renderLastMessage(chat.last_message, chat.last_message_type, chat.last_message_file_name) || 'Start chatting'}
                                         </p>
                                         {unreadCounts['chat_' + chat.id] > 0 && (
                                             <span className="bg-primary text-on-primary text-[11px] font-bold px-[6px] py-[2px] rounded-full min-w-[20px] text-center flex items-center justify-center">

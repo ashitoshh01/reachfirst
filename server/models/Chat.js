@@ -55,6 +55,8 @@ const Chat = {
         u.avatar_url as other_user_avatar,
         u.is_online as other_user_online,
         (SELECT content FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT message_type FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_type,
+        (SELECT file_name FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_file_name,
         (SELECT created_at FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
         (SELECT COUNT(*) FROM messages m 
          WHERE m.chat_id = c.id 

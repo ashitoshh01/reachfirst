@@ -27,6 +27,8 @@ const Group = {
       SELECT 
         g.*,
         (SELECT content FROM messages WHERE group_id = g.id ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT message_type FROM messages WHERE group_id = g.id ORDER BY created_at DESC LIMIT 1) as last_message_type,
+        (SELECT file_name FROM messages WHERE group_id = g.id ORDER BY created_at DESC LIMIT 1) as last_message_file_name,
         (SELECT created_at FROM messages WHERE group_id = g.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
         (SELECT COUNT(*) FROM messages m 
          WHERE m.group_id = g.id 

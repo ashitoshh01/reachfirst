@@ -292,7 +292,7 @@ const groupController = {
     async sendGroupMessage(req, res) {
         try {
             const { groupId } = req.params;
-            const { content, message_type } = req.body;
+            const { content, message_type, metadata } = req.body;
 
             if (!content) {
                 return res.status(400).json({ error: 'Message content is required' });
@@ -312,7 +312,10 @@ const groupController = {
                 sender_id: req.user.id,
                 group_id: groupId,
                 content,
-                message_type: message_type || 'text'
+                message_type: message_type || 'text',
+                file_name: metadata?.original_name || null,
+                file_mime_type: metadata?.mimetype || null,
+                file_size: metadata?.size || null
             });
 
             const message = await Message.findById(messageId);

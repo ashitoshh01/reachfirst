@@ -13,17 +13,20 @@ const Message = {
     },
 
     async create(messageData) {
-        const { sender_id, chat_id, group_id, content, message_type, is_automated } = messageData;
+        const { sender_id, chat_id, group_id, content, message_type, is_automated, file_name, file_mime_type, file_size } = messageData;
 
         const [result] = await db.execute(
-            'INSERT INTO messages (sender_id, chat_id, group_id, content, message_type, is_automated) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO messages (sender_id, chat_id, group_id, content, message_type, is_automated, file_name, file_mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 sender_id,
                 chat_id || null,
                 group_id || null,
                 content,
                 message_type || 'text',
-                is_automated || false
+                is_automated || false,
+                file_name || null,
+                file_mime_type || null,
+                file_size || null
             ]
         );
 

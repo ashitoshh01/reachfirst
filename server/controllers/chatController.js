@@ -46,7 +46,7 @@ const chatController = {
     async sendMessage(req, res) {
         try {
             const { chatId } = req.params;
-            const { content, message_type } = req.body;
+            const { content, message_type, metadata } = req.body;
 
             if (!content) {
                 return res.status(400).json({ error: 'Message content is required' });
@@ -56,7 +56,10 @@ const chatController = {
                 sender_id: req.user.id,
                 chat_id: chatId,
                 content,
-                message_type: message_type || 'text'
+                message_type: message_type || 'text',
+                file_name: metadata?.original_name || null,
+                file_mime_type: metadata?.mimetype || null,
+                file_size: metadata?.size || null
             });
 
             const message = await Message.findById(messageId);
