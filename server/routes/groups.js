@@ -22,6 +22,7 @@ router.get('/:groupId/messages', groupController.getGroupMessages);
 
 // Automation routes
 router.put('/:groupId/automation', groupController.toggleAutomation);
+router.post('/:groupId/automation-preview', groupController.previewAutomation);
 router.put('/:groupId/class-group', groupController.setClassGroup);
 router.delete('/:groupId/class-group', groupController.unsetClassGroup);
 

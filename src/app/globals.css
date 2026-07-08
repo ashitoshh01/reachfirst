@@ -302,6 +302,21 @@ body {
   }
 }
 
+.animate-slide-in-up {
+  animation: slideInUp 0.25s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Dark mode */
 .dark {
   color-scheme: dark;
@@ -317,7 +332,8 @@ body {
   .animate-fade-in-up,
   .animate-slide-in-left,
   .animate-slide-in-right,
-  .animate-shake {
+  .animate-shake,
+  .animate-slide-in-up {
     animation: none;
   }
 }

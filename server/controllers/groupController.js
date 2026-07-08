@@ -440,6 +440,54 @@ const groupController = {
             console.error('GetMyClassGroups error:', error);
             res.status(500).json({ error: 'Server error' });
         }
+    },
+
+    /**
+     * Preview which class groups automation will target for a given message.
+     * Does NOT actually send or forward anything — dry-run only.
+     */
+    async previewAutomation(req, res) {
+        try {
+            const { groupId } = req.params;
+            const { content } = req.body;
+
+            if (!content || !content.trim()) {
+                return res.json({ willTrigger: false, classes: [] });
+            }
+
+            const isMember = await Group.isMember(groupId, req.user.id);
+            if (!isMember) {
+                return res.status(403).json({ error: 'Access denied' });
+            }
+
+            const group = await Group.findById(groupId);
+            if (!group || !group.is_teacher_group || !group.automation_enabled) {
+                return res.json({ willTrigger: false, classes: [] });
+            }
+
+            // Check keyword match
+            const automationService = new AutomationService();
+            const matchedKeyword = await automationService.matchesKeyword(content);
+            if (!matchedKeyword) {
+                return res.json({ willTrigger: false, classes: [] });
+            }
+
+            // Get all class groups that would be targeted
+            const classGroups = await Group.getClassGroupsForTeacherGroupMembers(groupId);
+
+            res.json({
+                willTrigger: true,
+                matchedKeyword,
+                classes: classGroups.map(cg => ({
+                    id: cg.id,
+                    name: cg.name,
+                    teacherName: cg.class_teacher_name
+                }))
+            });
+        } catch (error) {
+            console.error('PreviewAutomation error:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
     }
 };
 

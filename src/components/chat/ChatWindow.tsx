@@ -18,6 +18,12 @@ interface Message {
     file_size?: number;
 }
 
+interface AutomationPreview {
+    willTrigger: boolean;
+    matchedKeyword?: string;
+    classes: { id: number; name: string; teacherName: string }[];
+}
+
 interface ChatWindowProps {
     chatId?: number;
     groupId?: number;
@@ -27,6 +33,8 @@ interface ChatWindowProps {
     headerAvatar?: string;
     isOnline?: boolean;
     onBack?: () => void;
+    automationEnabled?: boolean;
+    isTeacherGroup?: boolean;
 }
 
 export default function ChatWindow({
@@ -37,7 +45,9 @@ export default function ChatWindow({
     headerName,
     headerAvatar,
     isOnline,
-    onBack
+    onBack,
+    automationEnabled,
+    isTeacherGroup
 }: ChatWindowProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -52,6 +62,11 @@ export default function ChatWindow({
     const { socket } = useSocket();
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Automation Preview State
+    const [automationPreview, setAutomationPreview] = useState<AutomationPreview | null>(null);
+    const [loadingPreview, setLoadingPreview] = useState(false);
+    const previewTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Helpers
     const formatFileSize = (bytes?: number) => {
@@ -176,6 +191,50 @@ export default function ChatWindow({
         adjustHeight();
     }, [newMessage]);
 
+    // Automation preview: debounced check as user types
+    useEffect(() => {
+        // Only run if automation is on and this is a teacher group with a groupId
+        if (!automationEnabled || !isTeacherGroup || !groupId) {
+            setAutomationPreview(null);
+            return;
+        }
+
+        // Clear previous timer
+        if (previewTimerRef.current) {
+            clearTimeout(previewTimerRef.current);
+        }
+
+        const trimmed = newMessage.trim();
+        if (!trimmed) {
+            setAutomationPreview(null);
+            setLoadingPreview(false);
+            return;
+        }
+
+        setLoadingPreview(true);
+
+        // Debounce: wait 500ms after user stops typing
+        previewTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await api.post(`/api/groups/${groupId}/automation-preview`, {
+                    content: trimmed
+                });
+                setAutomationPreview(res.data);
+            } catch (error) {
+                console.error('Automation preview error:', error);
+                setAutomationPreview(null);
+            } finally {
+                setLoadingPreview(false);
+            }
+        }, 500);
+
+        return () => {
+            if (previewTimerRef.current) {
+                clearTimeout(previewTimerRef.current);
+            }
+        };
+    }, [newMessage, automationEnabled, isTeacherGroup, groupId]);
+
     const adjustHeight = () => {
         const textarea = textareaRef.current;
         if (textarea) {
@@ -213,6 +272,7 @@ export default function ChatWindow({
 
         const content = newMessage.trim();
         setNewMessage('');
+        setAutomationPreview(null);
         setSending(true);
 
         try {
@@ -466,6 +526,39 @@ export default function ChatWindow({
 
             {/* Input Area */}
             <div className="p-4 bg-surface border-t border-border flex flex-col relative shrink-0">
+                {/* Automation Preview Banner */}
+                {automationEnabled && isTeacherGroup && groupId && automationPreview?.willTrigger && (
+                    <div className="absolute bottom-full left-0 w-full z-10 animate-slide-in-up">
+                        <div className="mx-4 mb-0 bg-gradient-to-r from-[#1a2a3a] to-[#1e3348] border border-primary/30 rounded-t-xl px-4 py-3 shadow-lg backdrop-blur-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-base">⚡</span>
+                                <span className="text-xs font-semibold text-primary tracking-wide uppercase">Automation will trigger</span>
+                                {automationPreview.matchedKeyword && (
+                                    <span className="ml-auto text-[10px] bg-primary/15 text-primary/80 px-2 py-0.5 rounded-full font-medium">
+                                        keyword: &quot;{automationPreview.matchedKeyword}&quot;
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {automationPreview.classes.map((cls) => (
+                                    <span
+                                        key={cls.id}
+                                        className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full font-medium"
+                                        title={`Teacher: ${cls.teacherName}`}
+                                    >
+                                        <svg className="w-3 h-3 opacity-70" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+                                        </svg>
+                                        {cls.name}
+                                    </span>
+                                ))}
+                            </div>
+                            {automationPreview.classes.length === 0 && (
+                                <p className="text-xs text-text-secondary italic">No class groups configured for members of this group.</p>
+                            )}
+                        </div>
+                    </div>
+                )}
                 {/* File Preview Pane */}
                 {previewUrl && previewFile && (
                     <div className="absolute bottom-full left-0 w-full bg-surface border-t border-border p-4 flex flex-col gap-4 z-10 shadow-lg">

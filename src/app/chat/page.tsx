@@ -30,6 +30,8 @@ interface Group {
     last_message?: string;
     last_message_time?: string;
     unread_count?: number;
+    automation_enabled?: boolean | number;
+    is_teacher_group?: boolean | number;
 }
 
 export default function ChatPage() {
@@ -545,6 +547,8 @@ export default function ChatPage() {
                                     headerAvatar={activeGroup.avatar_url}
                                     onToggleContactInfo={() => setShowContactInfo(!showContactInfo)}
                                     onBack={() => { setSelectedChat(null); setSelectedGroup(null); }}
+                                    automationEnabled={!!activeGroup.automation_enabled}
+                                    isTeacherGroup={!!activeGroup.is_teacher_group}
                                 />
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-text-secondary">
